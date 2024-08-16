@@ -1,298 +1,267 @@
-// import { ObjectId } from "bson";
-// import { asyncHandler } from "../utils/asyncHandler.js";
-// import { ApiError } from "../utils/apiError.js";
-// import { ApiResponse } from "../utils/apiResponse.js";
-// import { User } from "../models/user.model.js";
-// import jwt from "jsonwebtoken";
-// import generateOtp from "../utils/otpGenerate.js";
-// import checkRateLimit from "../utils/checkRateLimit.js";
-// import { Rider } from "../models/rider.model.js";
-// import { Driver } from "../models/driver.model.js";
+import { asyncHandler } from "../utils/asyncHandler.js";
+import { ApiError } from "../utils/apiError.js";
+import { ApiResponse } from "../utils/apiResponse.js";
+import jwt from "jsonwebtoken";
+import generateOtp from "../utils/otpGenerate.js";
+import checkRateLimit from "../utils/checkRateLimit.js";
+import { User } from "../models/user.model.js";
+import { Auth } from "../models/auth.model.js";
 
-// const generateAccessAndRefreshToken = async (userId) => {
-//   try {
-//     const user = await User.findById(userId);
-//     const accessToken = user.generateAccessToken(); // custom methods
-//     const refreshToken = user.generateRefreshToken(); // custom methods
-//     user.refreshToken = refreshToken;
-//     await user.save({ validateBeforeSave: false });
+const generateAccessAndRefreshToken = async (authId) => {
+  try {
+    // Find the user in the Auth schema by their authId
+    const authUser = await Auth.findById(authId);
+    if (!authUser) {
+      throw new Error("User not found");
+    }
 
-//     return { accessToken, refreshToken };
-//   } catch (error) {
-//     throw new ApiError("500", "Something went wrong while generating tokens");
-//   }
-// };
+    // Generate access and refresh tokens using the methods from authSchema
+    const accessToken = authUser.generateAccessToken(); // Method from authSchema
+    const refreshToken = authUser.generateRefreshToken(); // Method from authSchema
 
-// const loginUser = asyncHandler(async (req, res) => {
-//   const { phone, isDriver } = req.body;
-//   if (!phone) {
-//     throw new ApiError(400, "Phone number is required");
-//   }
-//   let role = null;
-//   let userDetails = null;
+    // Save the new refresh token in the Auth schema
+    authUser.refreshToken = refreshToken;
+    await authUser.save({ validateBeforeSave: false });
 
-//   // Check if the user is a driver or a passenger
-//   if (isDriver) {
-//     // Check if the driver exists
-//     userDetails = await Driver.findOne({ phone });
-//     role = "driver";
-//   } else {
-//     // Check if the passenger exists
-//     userDetails = await Rider.findOne({ phone });
-//     role = "passenger";
-//   }
+    return { accessToken, refreshToken };
+  } catch (error) {
+    throw new ApiError("500", "Something went wrong while generating tokens");
+  }
+};
 
-//   let user = await User.findOne({ phone });
+const loginUser = asyncHandler(async (req, res) => {
+  const {
+    phone,
+    Fname,
+    Lname,
+    gender,
+    date_of_birth,
+    isAstrologer,
+    isAffiliate_marketer,
+    isAdmin,
+  } = req.body;
 
-//   if (userDetails) {
-//     const { accessToken, refreshToken } = await generateAccessAndRefreshToken(
-//       user._id
-//     );
-//     const newOtp = generateOtp();
+  if (!phone) {
+    throw new ApiError(400, "Phone number is required");
+  }
 
-//     user.otp = newOtp;
-//     user.isVerified = false;
-//     await user.save();
+  // Determine user role based on the request body
+  let role = "user"; // Default role
+  if (isAstrologer) {
+    role = "astrologer";
+  } else if (isAffiliate_marketer) {
+    role = "affiliate_marketer";
+  } else if (isAdmin) {
+    role = "admin";
+  }
 
-//     const data = {
-//       role,
-//       accessToken,
-//       refreshToken,
-//       userDetails: userDetails || {},
-//       otp: newOtp,
-//     };
-//     return res
-//       .status(200)
-//       .json(new ApiResponse(200, data, "Log in Succesfully"));
-//   } else {
-//     const newOtp = generateOtp();
-//     // Check if user exists
-//     if (user) {
-//       if (user.isDriver === isDriver) {
-//         // If user exists, update the OTP and user details
-//         user.otp = newOtp;
-//         user.isVerified = false;
-//         await user.save();
-//       } else {
-//         throw new ApiError(
-//           500,
-//           `This number is already used as ${isDriver ? "passenger" : "driver"} `
-//         );
-//       }
-//     } else {
-//       // If user does not exist, create a new user
-//       user = new User({
-//         phone,
-//         otp: newOtp,
-//         isVerified: false,
-//         isDriver,
-//         isAdmin: false,
-//       });
-//       await user.save();
-//     }
+  // Find or create the auth record
+  let authRecord = await Auth.findOne({ phone });
 
-//     return res
-//       .status(200)
-//       .json(new ApiResponse(200, newOtp, "OTP Sent Successfully"));
-//   }
-// });
+  if (!authRecord) {
+    // Create a new Auth record if none exists
+    authRecord = new Auth({
+      phone,
+      otp: generateOtp(), // Generate OTP here
+      otpExpiresAt: Date.now() + 5 * 60 * 1000, // OTP valid for 5 minutes
+      isVerified: false,
+      user_type: role,
+      refreshToken: "", // Initialize empty or handle accordingly
+    });
+    await authRecord.save();
+  } else {
+    // If auth record exists, generate a new OTP
+    const newOtp = generateOtp();
+    authRecord.setOtp(newOtp); // Update OTP and expiration
+    await authRecord.save();
+  }
 
-// const verify_OTP = asyncHandler(async (req, res) => {
-//   const { phone, otp } = req.body;
+  // Find or create the user record
+  let user = await User.findOne({ phone });
 
-//   if (!phone || !otp) {
-//     throw new ApiError(400, "Phone number and OTP are required");
-//   }
+  if (!user) {
+    // If no user exists, create a new one
+    user = new User({
+      userId: authRecord._id,
+      phone,
+      Fname: Fname || "", // Provide default values if not present
+      Lname: Lname || "", // Provide default values if not present
+      gender: gender || "Others", // Provide default value for gender
+      date_of_birth: date_of_birth || "1900-01-01", // Default DOB if not provided
+      isVerified: false,
+      isAstrologer: role === "astrologer",
+      isAffiliate_marketer: role === "affiliate_marketer",
+      isAdmin: role === "admin",
+    });
+    await user.save();
+  }
 
-//   // Find the user by phone number
-//   const user = await User.findOne({ phone });
+  // Generate tokens using the generateAccessAndRefreshToken function
+  const { accessToken, refreshToken } = await generateAccessAndRefreshToken(
+    authRecord._id
+  );
 
-//   const { accessToken, refreshToken } = await generateAccessAndRefreshToken(
-//     user._id
-//   );
+  // Prepare response data
+  const data = {
+    role,
+    accessToken,
+    refreshToken,
+    otp: authRecord.otp,
+    message: "OTP sent successfully",
+  };
 
-//   if (!user) {
-//     throw new ApiError(404, "User not found");
-//   }
+  // Send response
+  return res.status(200).json(data);
+});
 
-//   // Check if the OTP is within 5 minutes of the last update
-//   const now = new Date();
-//   const otpTimestamp = new Date(user.updatedAt);
-//   const timeDifference = (now - otpTimestamp) / 1000; // Difference in seconds
+const verify_OTP = asyncHandler(async (req, res) => {
+  const { phone, otp } = req.body;
 
-//   if (timeDifference > 300) {
-//     // 300 seconds = 5 minutes
-//     throw new ApiError(400, "OTP has expired");
-//   }
+  if (!phone || !otp) {
+    throw new ApiError(400, "Phone number and OTP are required");
+  }
 
-//   // Verify the OTP
-//   const isOtpVerified = user.otp === otp;
-//   if (!isOtpVerified) {
-//     throw new ApiError(400, "Invalid OTP");
-//   }
+  // Find the auth record by phone number
+  const authRecord = await Auth.findOne({ phone });
 
-//   // Mark user as verified
-//   user.isVerified = true;
-//   await user.save();
+  if (!authRecord) {
+    throw new ApiError(404, "User not found");
+  }
 
-//   if (user.isDriver) {
-//     // Handle case for drivers
-//     const driverDetails = await Driver.findOne({ phone });
+  // Verify the OTP
+  const isOtpValid = authRecord.verifyOtp(otp);
 
-//     if (driverDetails) {
-//       // Driver exists
-//       const msg = {
-//         role: "driver",
-//         isNewDriver: false,
-//         phone: user.phone,
-//         accessToken,
-//         refreshToken,
-//         driverDetails,
-//       };
-//       return res.status(200).json(new ApiResponse(200, msg, "OTP Verified"));
-//     } else {
-//       // Driver does not exist
-//       const msg = {
-//         role: "driver",
-//         isNewDriver: true,
-//         phone: user.phone,
-//         accessToken,
-//         refreshToken,
-//         driverDetails: {},
-//       };
-//       return res.status(200).json(new ApiResponse(200, msg, "OTP Verified"));
-//     }
-//   } else {
-//     // Handle case for passengers
-//     let passengerDetails = await Rider.findOne({ phone });
+  if (!isOtpValid) {
+    throw new ApiError(400, "Invalid OTP");
+  }
 
-//     if (passengerDetails) {
-//       // Passenger details found
-//       const msg = {
-//         role: "passenger",
-//         isNewPassenger: false,
-//         phone: user.phone,
-//         accessToken,
-//         refreshToken,
-//         passengerDetails,
-//       };
-//       return res.status(200).json(new ApiResponse(200, msg, "OTP Verified"));
-//     } else {
-//       // Create a new rider
-//       const newRider = new Rider({
-//         name: "Rider", // Default name for new riders
-//         phone,
-//         userId: user._id,
-//       });
+  // Generate tokens
+  const { accessToken, refreshToken } = await generateAccessAndRefreshToken(
+    authRecord._id
+  );
 
-//       await newRider.save();
+  // Check if user already exists
+  let user = await User.findOne({ phone });
 
-//       const msg = {
-//         role: "passenger",
-//         isNewPassenger: true,
-//         phone: user.phone,
-//         accessToken,
-//         refreshToken,
-//         passengerDetails: newRider,
-//       };
-//       return res.status(200).json(new ApiResponse(200, msg, "OTP Verified"));
-//     }
-//   }
-// });
+  if (!user) {
+    // Create a new User record
+    user = new User({
+      phone,
+      otp: authRecord.otp, // You might want to set this to null or adjust
+      isVerified: true,
+      isAstrologer: authRecord.user_type === "astrologer",
+      isAffiliate_marketer: authRecord.user_type === "affiliate_marketer",
+      isAdmin: authRecord.user_type === "admin",
+    });
+    await user.save();
+  }
 
-// const refreshAccessToken = asyncHandler(async (req, res) => {
-//   const incomingRefreshToken = req.body.refreshToken;
-//   if (!incomingRefreshToken) {
-//     throw new ApiError(401, "unauthorized request");
-//   }
-//   console.log({ incomingRefreshToken });
+  // Mark the auth record as verified
+  authRecord.isVerified = true;
+  await authRecord.save();
 
-//   try {
-//     const decodedToken = await jwt.verify(
-//       incomingRefreshToken,
-//       process.env.REFRESH_TOKEN_SECRET
-//     );
-//     console.log({ decodedToken });
+  const data = {
+    role: authRecord.user_type,
+    phone: user.phone,
+    accessToken,
+    refreshToken,
+    isNewUser: !user.isVerified,
+    userDetails: user,
+  };
 
-//     if (!decodedToken) {
-//       throw new ApiError("401", "unauthorized request");
-//     }
-//     const user = await User.findById(decodedToken?._id).select(
-//       "-phone -otp -isVerified -isAdmin -createdAt -updatedAt"
-//     );
+  return res.status(200).json(new ApiResponse(200, data, "OTP Verified"));
+});
 
-//     if (!user) {
-//       throw new ApiError("401", "invalid refresh token");
-//     }
+const refreshAccessToken = asyncHandler(async (req, res) => {
+  const { refreshToken: incomingRefreshToken } = req.body;
 
-//     if (incomingRefreshToken !== user?.refreshToken) {
-//       throw new ApiError("401", "Refresh token is expired");
-//     }
-//     const { accessToken, refreshToken } = await generateAccessAndRefreshToken(
-//       user?._id
-//     );
-//     const tokens = {
-//       accessToken,
-//       refreshToken,
-//     };
-//     console.log({ tokens });
-//     return res
-//       .status(200)
-//       .json(new ApiResponse(200, tokens, "New tokens generated"));
-//   } catch (error) {
-//     throw new ApiError(401, error?.message || "invalid refresh token");
-//   }
-// });
+  if (!incomingRefreshToken) {
+    throw new ApiError(401, "Unauthorized request");
+  }
 
-// const resendOTP = asyncHandler(async (req, res) => {
-//   const { phone } = req.body;
-//   if (!phone) {
-//     throw new ApiError(400, "Phone number is required");
-//   }
-//   const { allowed, remainingTime } = checkRateLimit(phone);
-//   if (!allowed) {
-//     throw new ApiError(
-//       429,
-//       `Too many requests. Try again in ${Math.ceil(remainingTime / 60000)} minutes.`
-//     );
-//   }
-//   let user = await User.findOne({ phone });
-//   const newOtp = generateOtp();
+  try {
+    const decodedToken = jwt.verify(
+      incomingRefreshToken,
+      process.env.REFRESH_TOKEN_SECRET
+    );
 
-//   if (user) {
-//     // If user exists, update the OTP
-//     user.otp = newOtp;
-//     user.isVerified = false;
-//     await user.save();
-//     return res
-//       .status(200)
-//       .json(new ApiResponse(200, newOtp, "OTP Sent Successfully"));
-//   } else {
-//     throw new ApiError(500, `Invalid Phone number`);
-//   }
-// });
+    const user = await User.findById(decodedToken._id);
 
-// const logoutUser = asyncHandler(async (req, res) => {
-//   await User.findByIdAndUpdate(
-//     req.user._id,
-//     {
-//       $set: { refreshToken: undefined },
-//     },
-//     {
-//       new: true, // if document is set then return the new document
-//     }
-//   );
+    if (!user || incomingRefreshToken !== user.refreshToken) {
+      throw new ApiError(401, "Invalid or expired refresh token");
+    }
 
-//   const options = {
-//     httpOnly: true,
-//     secure: true,
-//   };
+    // Generate new tokens
+    const { accessToken, refreshToken } = await generateAccessAndRefreshToken(
+      user._id
+    );
 
-//   return res
-//     .status(200)
-//     .clearCookie("accessToken", options)
-//     .clearCookie("refreshToken", options)
-//     .json(new ApiResponse(200, {}, "User loggged out"));
-// });
+    return res
+      .status(200)
+      .json(
+        new ApiResponse(
+          200,
+          { accessToken, refreshToken },
+          "New tokens generated"
+        )
+      );
+  } catch (error) {
+    throw new ApiError(401, "Invalid refresh token");
+  }
+});
 
-// export { loginUser, verify_OTP, logoutUser, refreshAccessToken, resendOTP };
+const resendOTP = asyncHandler(async (req, res) => {
+  const { phone } = req.body;
+
+  if (!phone) {
+    throw new ApiError(400, "Phone number is required");
+  }
+
+  // Check rate limit for resending OTP
+  const { allowed, remainingTime } = checkRateLimit(phone);
+  if (!allowed) {
+    throw new ApiError(
+      429,
+      `Too many requests. Try again in ${Math.ceil(remainingTime / 60000)} minutes.`
+    );
+  }
+
+  let user = await User.findOne({ phone });
+  if (!user) {
+    throw new ApiError(400, "Invalid phone number");
+  }
+
+  // Generate a new OTP and update the user record
+  const newOtp = generateOtp();
+  user.otp = newOtp;
+  user.isVerified = false;
+  await user.save();
+
+  return res
+    .status(200)
+    .json(new ApiResponse(200, newOtp, "OTP Sent Successfully"));
+});
+
+const logoutUser = asyncHandler(async (req, res) => {
+  await User.findByIdAndUpdate(
+    req.user._id,
+    {
+      $set: { refreshToken: undefined },
+    },
+    { new: true }
+  );
+
+  const options = {
+    httpOnly: true,
+    secure: true,
+  };
+
+  // Clear access and refresh tokens from cookies
+  return res
+    .status(200)
+    .clearCookie("accessToken", options)
+    .clearCookie("refreshToken", options)
+    .json(new ApiResponse(200, {}, "User logged out"));
+});
+
+export { loginUser, verify_OTP, logoutUser, refreshAccessToken, resendOTP };

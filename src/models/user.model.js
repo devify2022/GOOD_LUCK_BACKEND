@@ -1,62 +1,67 @@
-// import mongoose, { Schema } from "mongoose";
-// import jwt from "jsonwebtoken";
+import mongoose, { Schema } from "mongoose";
 
-// const usersSchema = new Schema(
-//   {
-//     phone: {
-//       type: String,
-//       required: [true, "Phone number is required"],
-//       unique: true,
-//     },
-//     otp: {
-//       type: Number,
-//       // required: [true, 'OTP is required'],
-//     },
-//     isVerified: {
-//       type: Boolean,
-//       // required: [true, 'Verification status is required'],
-//       default: false,
-//     },
-//     isDriver: {
-//       type: Boolean,
-//       required: [true, "Driver status is required"],
-//     },
-//     isAdmin: {
-//       type: Boolean,
-//       // required: [true, 'Admin status is required'],
-//       default: false,
-//     },
-//     refreshToken: {
-//       type: String,
-//     },
-//   },
-//   { timestamps: true }
-// );
+const usersSchema = new Schema(
+  {
+    userId: {
+      type: Schema.Types.ObjectId,
+      ref: "Auth",
+    },
+    Fname: {
+      type: String,
+      required: [true, "First name is required"],
+    },
+    Lname: {
+      type: String,
+      required: [true, "Last name is required"],
+    },
+    gender: {
+      type: String,
+      enum: ["Male", "Female", "Others"],
+      required: [true, "Gender is required"],
+    },
+    date_of_birth: {
+      type: String,
+      required: [true, "DOB is required"],
+    },
+    phone: {
+      type: String,
+      required: [true, "Phone Number is required"],
+    },
+    last_login: {
+      type: String,
+      validate: {
+        validator: function (v) {
+          return /\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}.\d{3}Z/.test(v); // ISO 8601 date format
+        },
+        message: (props) => `${props.value} is not a valid date format!`,
+      },
+    },
+    services: [String],
+    isVerified: {
+      type: Boolean,
+      default: false,
+    },
+    isActive: {
+      type: Boolean,
+      default: false,
+    },
+    isAstrologer: {
+      type: Boolean,
+      default: false,
+    },
+    isAffiliate_marketer: {
+      type: Boolean,
+      default: false,
+    },
+    isAdmin: {
+      type: Boolean,
+      default: false,
+    },
+    refreshToken: {
+      type: String,
+    },
+  },
+  { timestamps: true }
+);
 
-// usersSchema.methods.generateAccessToken = function () {
-//   return jwt.sign(
-//     {
-//       _id: this._id,
-//       isDriver: this.isDriver,
-//     },
-//     process.env.ACCESS_TOKEN_SECRET,
-//     {
-//       expiresIn: process.env.ACCESS_TOKEN_EXPIRY,
-//     }
-//   );
-// };
-
-// usersSchema.methods.generateRefreshToken = function () {
-//   return jwt.sign(
-//     {
-//       _id: this._id,
-//       isDriver: this.isDriver,
-//     },
-//     process.env.REFRESH_TOKEN_SECRET,
-//     {
-//       expiresIn: process.env.REFRESH_TOKEN_EXPIRY,
-//     }
-//   );
-// };
-
-// export const User = mongoose.model("User", usersSchema);
+export const User = mongoose.model("User", usersSchema);

@@ -20,10 +20,10 @@ app.use(express.urlencoded({ extended: true, limit: "16kb" }));
 app.use(express.static("public"));
 
 // routes import
-// import userRouter from "./routes/user.routes.js";
+import userRouter from "./routes/user.routes.js";
 
 // routes declaration
-// app.use("/eto/api/v1/auth", userRouter);
+app.use("/good_luck/api/v1/auth", userRouter);
 
 
 export { app };
