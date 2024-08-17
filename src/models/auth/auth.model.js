@@ -8,7 +8,7 @@ const authSchema = new Schema(
       required: [true, "Phone number is required"],
       validate: {
         validator: function (v) {
-          return /^(\+\d{1,3}[- ]?)?\d{10}$/.test(v); // Regex for international or 10-digit phone number
+          return /^(\+\d{1,3}[- ]?)?\d{10}$/.test(v);
         },
         message: (props) => `${props.value} is not a valid phone number!`,
       },
@@ -17,7 +17,7 @@ const authSchema = new Schema(
       type: Number,
     },
     otpExpiresAt: {
-      type: Date, // Add expiry time for OTP
+      type: Date,
     },
     isVerified: {
       type: Boolean,

@@ -9,11 +9,9 @@ const astrologerSchema = new Schema(
     },
     Fname: {
       type: String,
-      required: [true, "First name is required"],
     },
     Lname: {
       type: String,
-      required: [true, "Last name is required"],
     },
     phone: {
       type: String,
@@ -35,11 +33,11 @@ const astrologerSchema = new Schema(
     },
     total_number_service_provide: {
       type: Number,
-      default: 2,
+      default: 0,
     },
     total_earning: {
-      type: String,
-      required: [true, "Total earning is required"],
+      type: Number,
+      default: 0,
     },
     chat_price: {
       type: Number,

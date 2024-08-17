@@ -1,17 +1,21 @@
 import { Router } from "express";
+
 import {
+  auth_request_verify_OTP,
+  authRequest,
+  login_verify_OTP,
   loginUser,
-  verify_OTP,
-  logoutUser,
   refreshAccessToken,
   resendOTP,
-} from "../controllers/user.controller.js";
-import { verifyJWT } from "../middlewares/auth.middleware.js";
+} from "../../controllers/auth/user.controller.js";
+import { verifyJWT } from "./../../middlewares/auth.middleware.js";
 const router = Router();
 
+router.route("/newUserRequest").post(authRequest);
+router.route("/authRequestVerifyotp").post(auth_request_verify_OTP);
 router.route("/login").post(loginUser);
+router.route("/loginVerifyotp").post(login_verify_OTP);
 router.route("/resend_otp").post(resendOTP);
-router.route("/verifyotp").post(verify_OTP);
 
 // secure routes
 // router.route("/logout").post(verifyJWT, logoutUser);
