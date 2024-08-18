@@ -5,7 +5,7 @@ const astrologerSchema = new Schema(
     userId: {
       type: Schema.Types.ObjectId,
       ref: "Auth",
-      required: true, // Added required here
+      required: true,
     },
     Fname: {
       type: String,

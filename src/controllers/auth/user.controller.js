@@ -132,7 +132,7 @@ const auth_request_verify_OTP = asyncHandler(async (req, res) => {
     newAuth._id
   );
 
-  await AuthRequest.deleteOne({ phone });
+  await authRequestRecord.deleteOne();
 
   return res.status(200).json(
     new ApiResponse(
