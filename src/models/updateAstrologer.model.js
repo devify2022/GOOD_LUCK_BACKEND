@@ -1,12 +1,8 @@
 import mongoose, { Schema } from "mongoose";
 
-const astrologerSchema = new Schema(
+// Schema for Astrologer Profile Update Request
+const updateRequestAstrologerProfileSchema = new Schema(
   {
-    userId: {
-      type: Schema.Types.ObjectId,
-      ref: "Auth",
-      required: true, // Added required here
-    },
     Fname: {
       type: String,
     },
@@ -26,18 +22,6 @@ const astrologerSchema = new Schema(
     specialisation: {
       type: [String],
       required: [true, "Specialisation is required"],
-    },
-    rating: {
-      type: Number,
-      default: 2,
-    },
-    total_number_service_provide: {
-      type: Number,
-      default: 0,
-    },
-    total_earning: {
-      type: Number,
-      default: 0,
     },
     chat_price: {
       type: Number,
@@ -71,8 +55,28 @@ const astrologerSchema = new Schema(
       type: [String],
       required: [true, "Certifications are required"],
     },
+    otp: {
+      type: Number,
+    },
+    otpExpiresAt: {
+      type: Date,
+    },
   },
   { timestamps: true }
 );
 
-export const Astrologer = mongoose.model("Astrologer", astrologerSchema);
+// Method to verify OTP
+updateRequestAstrologerProfileSchema.methods.verifyOtp = function (enteredOtp) {
+  return this.otp === enteredOtp && this.otpExpiresAt > Date.now();
+};
+
+// Method to set OTP with expiration
+updateRequestAstrologerProfileSchema.methods.setOtp = function (otp, expiryInMinutes = 5) {
+  this.otp = otp;
+  this.otpExpiresAt = Date.now() + expiryInMinutes * 60 * 1000; // Set expiry time for OTP
+};
+
+export const UpdateAstrologerProfile = mongoose.model(
+  "UpdateAstrologerProfile",
+  updateRequestAstrologerProfileSchema
+);

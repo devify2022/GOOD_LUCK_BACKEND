@@ -14,12 +14,12 @@ app.use(express.urlencoded({ extended: true, limit: "16kb" }));
 app.use(express.static("public"));
 
 // Import routes
-import userRouter from "./routes/auth/user.routes.js";
-import astrologerRouter from "./routes/auth/user.routes.js";
+import userRoutes from "./routes/auth/user.routes.js";
+import astrologerRoutes from "./routes/astrologer.route.js";
 
 // Use routes
-app.use("/good_luck/api/v1/auth", userRouter);
-app.use("/good_luck/api/v1/astrologer", astrologerRouter);
+app.use("/good_luck/api/v1/auth", userRoutes);
+app.use("/good_luck/api/v1/astrologer", astrologerRoutes); 
 
 // Apply error handler as the last middleware
 app.use(errorHandler);
