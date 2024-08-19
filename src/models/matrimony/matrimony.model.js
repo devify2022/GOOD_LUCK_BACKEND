@@ -1,6 +1,6 @@
 import mongoose, { Schema } from "mongoose";
 
-const datingSchema = new Schema(
+const matrimonySchema = new Schema(
   {
     authId: {
       type: Schema.Types.ObjectId,
@@ -12,18 +12,9 @@ const datingSchema = new Schema(
       ref: "User",
       required: true,
     },
-    age: {
-      type: Number,
-      required: [true, "Age is required"],
-      min: [18, "Minimum age is 18"],
-    },
-    photos: {
-      type: [String],
+    photo: {
+      type: String,
       required: [true, "Photo is required"],
-    },
-    subscribed: {
-      type: Boolean,
-      default: false,
     },
     city: {
       type: String,
@@ -32,6 +23,19 @@ const datingSchema = new Schema(
     state: {
       type: String,
       required: [true, "State is required"],
+    },
+    salary: {
+      type: String,
+      required: [true, "Salary is required"],
+    },
+    age: {
+      type: Number,
+      required: [true, "Age is required"],
+      min: [18, "Minimum age is 18"],
+    },
+    subscribed: {
+      type: Boolean,
+      default: false,
     },
     subs_plan_name: {
       type: String,
@@ -42,11 +46,7 @@ const datingSchema = new Schema(
     bio: {
       type: String,
     },
-    smoker: {
-      type: Boolean,
-      default: false,
-    },
-    alcoholic: {
+    isDivorce: {
       type: Boolean,
       default: false,
     },
@@ -56,22 +56,18 @@ const datingSchema = new Schema(
     sent_likes_id: {
       type: Schema.Types.ObjectId,
     },
-    education: {
+    gender: {
       type: String,
-      enum: [
-        "bachelors",
-        "in college",
-        "high school",
-        "phd",
-        "in Grad school",
-        "masters",
-        "trade school",
-      ],
+      enum: ["Male", "Female"],
+    },
+    cast: {
+      type: String,
+      enum: ["hindu", "muslim", "others"],
       required: true,
     },
-    orientation: {
+    searching_for: {
       type: String,
-      enum: ["straight", "gay", "lesbian"],
+      enum: ["bride", "groom"],
       required: true,
     },
     interests: {
@@ -90,13 +86,8 @@ const datingSchema = new Schema(
       ],
       required: true,
     },
-    looking_for: {
-      type: String,
-      enum: ["male", "female", "both"],
-      required: true,
-    },
   },
   { timestamps: true }
 );
 
-export const Dating = mongoose.model("Dating", datingSchema);
+export const Matrimony = mongoose.model("Matrimony", matrimonySchema);

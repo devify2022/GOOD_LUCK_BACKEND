@@ -1,11 +1,11 @@
-import { ApiError } from "../utils/apiError.js";
-import { ApiResponse } from "../utils/apiResponse.js";
-import { asyncHandler } from "../utils/asyncHandler.js";
-import { UpdateAstrologerProfile } from "../models/astrologer/updateAstrologer.model.js";
-import generateOtp from "../utils/otpGenerate.js";
-import { User } from "../models/auth/user.model.js";
-import { Astrologer } from "../models/astrologer/astroler.model.js";
-import { Auth } from "../models/auth/auth.model.js";
+import { ApiError } from "../../utils/apiError.js";
+import { ApiResponse } from "../../utils/apiResponse.js";
+import { asyncHandler } from "../../utils/asyncHandler.js";
+import { UpdateAstrologerProfile } from "../../models/astrologer/updateAstrologer.model.js";
+import generateOtp from "../../utils/otpGenerate.js";
+import { User } from "../../models/auth/user.model.js";
+import { Astrologer } from "../../models/astrologer/astroler.model.js";
+import { Auth } from "../../models/auth/auth.model.js";
 
 // Create Astrologer
 export const createAstrologer = asyncHandler(async (req, res) => {

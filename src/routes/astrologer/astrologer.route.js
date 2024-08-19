@@ -6,7 +6,7 @@ import {
   getAstrologerById,
   updateRequestAstrologerProfile,
   verifyAstrologerProfileUpdateOTP,
-} from "../controllers/astrologerController.js";
+} from "../../controllers/astrologer/astrologerController.js";
 
 const router = Router();
 

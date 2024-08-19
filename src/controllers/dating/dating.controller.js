@@ -1,8 +1,8 @@
-import { User } from "../models/auth/user.model.js";
-import { Dating } from "../models/dating/dating.model.js";
-import { ApiError } from "../utils/apiError.js";
-import { ApiResponse } from "../utils/apiResponse.js";
-import { asyncHandler } from "../utils/asyncHandler.js";
+import { User } from "../../models/auth/user.model.js";
+import { Dating } from "../../models/dating/dating.model.js";
+import { ApiError } from "../../utils/apiError.js";
+import { ApiResponse } from "../../utils/apiResponse.js";
+import { asyncHandler } from "../../utils/asyncHandler.js";
 
 // Create Dating Profile
 export const createDatingProfile = asyncHandler(async (req, res) => {
@@ -10,8 +10,10 @@ export const createDatingProfile = asyncHandler(async (req, res) => {
     const { id } = req.params;
 
     const {
+      photos,
       city,
       state,
+      age,
       subs_plan_name,
       subs_start_date,
       bio,
@@ -45,7 +47,9 @@ export const createDatingProfile = asyncHandler(async (req, res) => {
       const newDatingProfile = new Dating({
         authId: id,
         userId: existsUser._id,
+        photos,
         city,
+        age,
         state,
         subs_plan_name,
         subs_start_date,
@@ -105,7 +109,7 @@ export const getAllDatingProfiles = asyncHandler(async (req, res) => {
 });
 
 // Get Single Dating Profile by ID
-export const getDatingProfileById = asyncHandler(async (req, res) => {
+export const getDatingProfileByUserId = asyncHandler(async (req, res) => {
   try {
     const { id } = req.params;
 
@@ -134,11 +138,12 @@ export const getDatingProfileById = asyncHandler(async (req, res) => {
 });
 
 // Update Dating Profile
-export const updateDatingProfile = asyncHandler(async (req, res) => {
+export const updateDatingProfileByUserId = asyncHandler(async (req, res) => {
   try {
     const { id } = req.params;
 
     const {
+      photos,
       city,
       state,
       subs_plan_name,
@@ -158,6 +163,7 @@ export const updateDatingProfile = asyncHandler(async (req, res) => {
     const updatedProfile = await Dating.findOneAndUpdate(
       { userId: id },
       {
+        photos,
         city,
         state,
         subs_plan_name,
@@ -196,7 +202,7 @@ export const updateDatingProfile = asyncHandler(async (req, res) => {
 });
 
 // Delete Dating Profile
-export const deleteDatingProfile = asyncHandler(async (req, res) => {
+export const deleteDatingProfileByUserId = asyncHandler(async (req, res) => {
   try {
     const { id } = req.params;
 
