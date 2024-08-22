@@ -3,6 +3,7 @@ import ProductCategory from "../../models/product/productCategory.model.js";
 import { ApiError } from "../../utils/apiError.js";
 import { ApiResponse } from "../../utils/apiResponse.js";
 import { asyncHandler } from "../../utils/asyncHandler.js";
+import mongoose from "mongoose";
 
 // Create Product
 export const createProduct = asyncHandler(async (req, res) => {
@@ -118,6 +119,59 @@ export const getProductById = asyncHandler(async (req, res) => {
     return res
       .status(200)
       .json(new ApiResponse(200, product, "Product retrieved successfully"));
+  } catch (error) {
+    throw new ApiError(500, error.message);
+  }
+});
+
+// Get Products by Category
+export const getProductsByCategory = asyncHandler(async (req, res) => {
+  try {
+    const { categoryId } = req.params;
+
+    const products = await Product.aggregate([
+      {
+        $match: {
+          category: new mongoose.Types.ObjectId(categoryId),
+        },
+      },
+      {
+        $lookup: {
+          from: "productcategories",
+          localField: "category",
+          foreignField: "_id",
+          as: "categoryDetails",
+        },
+      },
+      {
+        $unwind: "$categoryDetails",
+      },
+      {
+        $project: {
+          productName: 1,
+          productDescription: 1,
+          category: "$categoryDetails.category_name",
+          rating: 1,
+          brand: 1,
+          weight: 1,
+          originalPrice: 1,
+          displayPrice: 1,
+          in_stock: 1,
+        },
+      },
+    ]);
+
+    if (!products || products.length === 0) {
+      return res
+        .status(404)
+        .json(
+          new ApiResponse(404, null, "No products found for this category")
+        );
+    }
+
+    return res
+      .status(200)
+      .json(new ApiResponse(200, products, "Products retrieved successfully"));
   } catch (error) {
     throw new ApiError(500, error.message);
   }

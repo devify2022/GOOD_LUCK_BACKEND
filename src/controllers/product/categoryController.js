@@ -24,14 +24,20 @@ export const createProductCategory = asyncHandler(async (req, res) => {
       category_name,
     });
 
+    // Save the new category
     await newCategory.save();
+
+    // Fetch the newly saved category and select only `createdAt` and `updatedAt`
+    const savedCategory = await ProductCategory.findById(
+      newCategory._id
+    ).select("-createdAt -updatedAt");
 
     return res
       .status(201)
       .json(
         new ApiResponse(
           201,
-          newCategory,
+          savedCategory,
           "Product category created successfully"
         )
       );
