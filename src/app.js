@@ -20,12 +20,18 @@ import userRoutes from "./routes/auth/user.routes.js";
 import astrologerRoutes from "./routes/astrologer/astrologer.route.js";
 import datingRoutes from "./routes/dating/dating.routes.js";
 import matrimonyRoutes from "./routes/matrimony/matrimony.routes.js";
+import productCategoryRoutes from "./routes/product/productcategory.routes.js";
+import productRoutes from "./routes/product/product.routes.js";
+import orderRoutes from "./routes/product/order.routes.js";
 
 // Use routes
 app.use("/good_luck/api/v1/auth", userRoutes);
 app.use("/good_luck/api/v1/astrologer", astrologerRoutes);
 app.use("/good_luck/api/v1/dating", datingRoutes);
 app.use("/good_luck/api/v1/matrimony", matrimonyRoutes);
+app.use("/good_luck/api/v1/productCategory", productCategoryRoutes);
+app.use("/good_luck/api/v1/product", productRoutes);
+app.use("/good_luck/api/v1/order", orderRoutes);
 
 app.use(errorHandler);
 
