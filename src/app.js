@@ -33,6 +33,11 @@ app.use("/good_luck/api/v1/productCategory", productCategoryRoutes);
 app.use("/good_luck/api/v1/product", productRoutes);
 app.use("/good_luck/api/v1/order", orderRoutes);
 
+app.get("/", (req, res) => {
+  res.send("Welcome to Good Luck API!");
+});
+
+// Error handling middleware
 app.use(errorHandler);
 
 export { app };
