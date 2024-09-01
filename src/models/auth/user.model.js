@@ -25,7 +25,13 @@ const usersSchema = new Schema(
     },
     phone: {
       type: String,
-      required: [true, "Phone Number is required"],
+      required: [true, "Phone number is required"],
+      validate: {
+        validator: function (v) {
+          return /^(\+\d{1,3}[- ]?)?\d{10}$/.test(v);
+        },
+        message: (props) => `${props.value} is not a valid phone number!`,
+      },
     },
     last_login: {
       type: String,
