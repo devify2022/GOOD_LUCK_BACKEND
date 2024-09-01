@@ -4,24 +4,24 @@ const authRequestSchema = new Schema(
   {
     Fname: {
       type: String,
-      required: [true, "First name is required"],
+      // required: [true, "First name is required"],
     },
     Lname: {
       type: String,
-      required: [true, "Last name is required"],
+      // required: [true, "Last name is required"],
     },
     gender: {
       type: String,
       enum: ["Male", "Female", "Others"],
-      required: [true, "Gender is required"],
+      // required: [true, "Gender is required"],
     },
     date_of_birth: {
       type: String,
-      required: [true, "DOB is required"],
+      // required: [true, "DOB is required"],
     },
     phone: {
       type: String,
-      required: [true, "Phone Number is required"],
+      // required: [true, "Phone Number is required"],
     },
     last_login: {
       type: String,
@@ -43,15 +43,12 @@ const authRequestSchema = new Schema(
     },
     isAstrologer: {
       type: Boolean,
-      default: false,
     },
     isAffiliate_marketer: {
       type: Boolean,
-      default: false,
     },
     isAdmin: {
       type: Boolean,
-      default: false,
     },
     otp: {
       type: Number,

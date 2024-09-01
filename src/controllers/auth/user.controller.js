@@ -45,10 +45,14 @@ const authRequest = asyncHandler(async (req, res) => {
     throw new ApiError(400, "Phone number is required");
   }
 
-  let role = "user";
-  if (isAstrologer) role = "astrologer";
-  else if (isAffiliate_marketer) role = "affiliate_marketer";
-  else if (isAdmin) role = "admin";
+  let role;
+  if (!isAstrologer && !isAffiliate_marketer && !isAdmin) {
+    role = "user";
+  } else {
+    if (isAstrologer) role = "astrologer";
+    else if (isAffiliate_marketer) role = "affiliate_marketer";
+    else if (isAdmin) role = "admin";
+  }
 
   let authRecord = await Auth.findOne({ phone });
   let authRequest = await AuthRequest.findOne({ phone });
@@ -120,7 +124,7 @@ const auth_request_verify_OTP = asyncHandler(async (req, res) => {
     Fname: authRequestRecord.Fname || "",
     Lname: authRequestRecord.Lname || "",
     gender: authRequestRecord.gender || "Others",
-    date_of_birth: authRequestRecord.date_of_birth || "1900-01-01",
+    date_of_birth: authRequestRecord.date_of_birth || "00-00-0000",
     isVerified: true,
     isAstrologer: authRequestRecord.isAstrologer,
     isAffiliate_marketer: authRequestRecord.isAffiliate_marketer,

@@ -1,7 +1,7 @@
 {
-  "name": "eto-backend",
+  "name": "good_luck_backend",
   "version": "1.0.0",
-  "description": "TOTO booking system",
+  "description": "Astrology services",
   "main": "index.js",
   "type": "module",
   "scripts": {
