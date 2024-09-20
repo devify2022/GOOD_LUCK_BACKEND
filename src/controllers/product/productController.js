@@ -11,6 +11,7 @@ export const createProduct = asyncHandler(async (req, res) => {
   try {
     const {
       productName,
+      image,
       productDescription,
       category,
       rating,
@@ -23,6 +24,7 @@ export const createProduct = asyncHandler(async (req, res) => {
 
     if (
       !productName ||
+      !image||
       !productDescription ||
       !category ||
       !brand ||
@@ -64,6 +66,7 @@ export const createProduct = asyncHandler(async (req, res) => {
 
     const newProduct = new Product({
       productName,
+      image,
       productDescription,
       category,
       rating,
@@ -183,6 +186,7 @@ export const updateProductById = asyncHandler(async (req, res) => {
     const { id } = req.params;
     const {
       productName,
+      image,
       productDescription,
       category,
       rating,
@@ -197,6 +201,7 @@ export const updateProductById = asyncHandler(async (req, res) => {
       id,
       {
         productName,
+        image,
         productDescription,
         category,
         rating,

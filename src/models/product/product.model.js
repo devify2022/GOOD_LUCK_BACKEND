@@ -9,6 +9,10 @@ const productSchema = new Schema(
       trim: true,
       required: [true, "Product name is required"],
     },
+    image: {
+      type: String,
+      required: [true, "Product name is required"],
+    },
     productDescription: {
       type: String,
       trim: true,
