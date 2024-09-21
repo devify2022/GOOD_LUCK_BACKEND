@@ -10,6 +10,7 @@ export const createOrder = asyncHandler(async (req, res) => {
   try {
     const {
       userId,
+      name,
       city,
       state,
       phone,
@@ -23,6 +24,7 @@ export const createOrder = asyncHandler(async (req, res) => {
     } = req.body;
 
     const requiredFields = [
+      { name: "name", message: "Name is required" },
       { name: "city", message: "City name is required" },
       { name: "state", message: "State description is required" },
       // { name: "phone", message: "Phone number is required" },
@@ -58,6 +60,7 @@ export const createOrder = asyncHandler(async (req, res) => {
 
     const newOrder = new Order({
       userId,
+      name,
       city,
       state,
       phone: phone || user.phone,

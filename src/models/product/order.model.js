@@ -8,6 +8,10 @@ const orderSchema = new Schema(
       type: Schema.Types.ObjectId,
       ref: "User",
     },
+    name: {
+      type: String,
+      required: [true, "Name is required"],
+    },
     city: {
       type: String,
       trim: true,
