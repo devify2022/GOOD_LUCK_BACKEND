@@ -182,6 +182,7 @@ const loginUser = asyncHandler(async (req, res) => {
       new: true,
     }
   );
+  // console.log(authRecord)
 
   const { accessToken, refreshToken } = await generateAccessAndRefreshToken(
     authRecord._id
@@ -191,6 +192,7 @@ const loginUser = asyncHandler(async (req, res) => {
     new ApiResponse(
       200,
       {
+        userId: authRecord._id,
         role: authRecord.user_type,
         accessToken,
         refreshToken,
@@ -235,6 +237,7 @@ const login_verify_OTP = asyncHandler(async (req, res) => {
     new ApiResponse(
       200,
       {
+        userId: authRecord._id,
         role: authRecord.user_type,
         phone: authRecord.phone,
         accessToken,
