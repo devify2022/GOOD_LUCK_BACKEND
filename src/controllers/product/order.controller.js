@@ -45,7 +45,7 @@ export const createOrder = asyncHandler(async (req, res) => {
       );
     }
 
-    const user = await User.findById(userId);
+    const user = await User.findOne({ userId: userId });
     const product = await Product.findById(order_details);
 
     if (!user) {
