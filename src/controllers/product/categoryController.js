@@ -6,10 +6,14 @@ import { asyncHandler } from "../../utils/asyncHandler.js";
 // Create Product Category
 export const createProductCategory = asyncHandler(async (req, res) => {
   try {
-    const { category_name } = req.body;
+    const { category_name, image } = req.body;
 
     if (!category_name) {
       throw new ApiError(400, "Category name is required");
+    }
+
+    if (!image) {
+      throw new ApiError(400, "Category image is required");
     }
 
     const existingCategory = await ProductCategory.findOne({ category_name });
@@ -22,6 +26,7 @@ export const createProductCategory = asyncHandler(async (req, res) => {
 
     const newCategory = new ProductCategory({
       category_name,
+      image,
     });
 
     // Save the new category
@@ -102,15 +107,19 @@ export const getCategoryById = asyncHandler(async (req, res) => {
 export const updateCategoryById = asyncHandler(async (req, res) => {
   try {
     const { id } = req.params;
-    const { category_name } = req.body;
+    const { category_name, image } = req.body;
 
     if (!category_name) {
       throw new ApiError(400, "Category name is required");
     }
 
+    if (!image) {
+      throw new ApiError(400, "Category image is required");
+    }
+
     const updatedCategory = await ProductCategory.findByIdAndUpdate(
       id,
-      { category_name },
+      { category_name, image },
       { new: true, runValidators: true }
     );
 
