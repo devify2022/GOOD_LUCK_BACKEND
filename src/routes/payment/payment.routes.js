@@ -4,7 +4,7 @@ import { checkStatus, createPayment } from "../../controllers/payment/payment.co
 
 const router = Router();
 
-router.get("/pay", createPayment);
+router.post("/pay", createPayment);
 router.get("/redirect-url/:merchantTransactionId", checkStatus);
 
 export default router;
