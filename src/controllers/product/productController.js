@@ -152,6 +152,7 @@ export const getProductsByCategory = asyncHandler(async (req, res) => {
       {
         $project: {
           productName: 1,
+          image: 1,
           productDescription: 1,
           category: "$categoryDetails.category_name",
           rating: 1,
