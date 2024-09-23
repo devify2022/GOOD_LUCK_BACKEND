@@ -142,6 +142,7 @@ const auth_request_verify_OTP = asyncHandler(async (req, res) => {
     new ApiResponse(
       200,
       {
+        userId: newAuth._id,
         role: newAuth.user_type,
         phone: newUser.phone,
         accessToken,

@@ -12,8 +12,16 @@ const matrimonySchema = new Schema(
       ref: "User",
       required: true,
     },
-    photo: {
+    Fname: {
       type: String,
+      required: [true, "First name is required"],
+    },
+    Lname: {
+      type: String,
+      required: [true, "Last name is required"],
+    },
+    photo: {
+      type: [String],
       required: [true, "Photo is required"],
     },
     city: {
