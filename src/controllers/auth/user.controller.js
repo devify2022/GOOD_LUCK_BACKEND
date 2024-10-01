@@ -7,6 +7,8 @@ import { ApiError } from "../../utils/apiError.js";
 import jwt from "jsonwebtoken";
 import { AuthRequest } from "../../models/auth/authRequest.model.js";
 import checkRateLimit from "./../../utils/checkRateLimit.js";
+import { Matrimony } from "../../models/matrimony/matrimony.model.js";
+import { Dating } from "../../models/dating/dating.model.js";
 
 // Helper to generate access and refresh tokens
 const generateAccessAndRefreshToken = async (authId) => {
@@ -234,6 +236,10 @@ const login_verify_OTP = asyncHandler(async (req, res) => {
   authRecord.otpExpiresAt = null;
   await authRecord.save();
 
+  // Fetch Matrimony and Dating profile IDs if they exist
+  const matrimonyProfile = await Matrimony.findOne({ authId: authRecord._id });
+  const datingProfile = await Dating.findOne({ authId: authRecord._id });
+
   return res.status(200).json(
     new ApiResponse(
       200,
@@ -243,6 +249,8 @@ const login_verify_OTP = asyncHandler(async (req, res) => {
         phone: authRecord.phone,
         accessToken,
         refreshToken,
+        matrimonyID: matrimonyProfile ? matrimonyProfile._id : null,
+        datingID: datingProfile ? datingProfile._id : null,
       },
       "OTP Verified"
     )
