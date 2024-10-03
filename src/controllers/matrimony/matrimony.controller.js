@@ -11,6 +11,7 @@ export const createMatrimonyProfile = asyncHandler(async (req, res) => {
     photo,
     city,
     state,
+    gender,
     salary,
     age,
     subs_plan_name,
