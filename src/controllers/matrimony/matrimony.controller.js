@@ -8,6 +8,8 @@ export const createMatrimonyProfile = asyncHandler(async (req, res) => {
   const { id } = req.params;
 
   const {
+    Fname,
+    Lname,
     photo,
     city,
     state,
@@ -43,8 +45,8 @@ export const createMatrimonyProfile = asyncHandler(async (req, res) => {
     const newMatrimonyProfile = new Matrimony({
       authId: id,
       userId: existsUser._id,
-      Fname: existsUser.Fname,
-      Lname: existsUser.Lname,
+      Fname,
+      Lname,
       photo,
       city,
       state,
