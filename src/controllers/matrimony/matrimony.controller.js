@@ -49,7 +49,7 @@ export const createMatrimonyProfile = asyncHandler(async (req, res) => {
       state,
       salary,
       age,
-      gender: existsUser.gender,
+      gender,
       subs_plan_name,
       subs_start_date,
       bio,
