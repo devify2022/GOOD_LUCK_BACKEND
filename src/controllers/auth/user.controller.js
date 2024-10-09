@@ -249,8 +249,8 @@ const login_verify_OTP = asyncHandler(async (req, res) => {
         phone: authRecord.phone,
         accessToken,
         refreshToken,
-        matrimonyID: matrimonyProfile ? matrimonyProfile._id : null,
-        datingID: datingProfile ? datingProfile._id : null,
+        matrimonyID: matrimonyProfile ? matrimonyProfile.userId : null,
+        datingID: datingProfile ? datingProfile.userId : null,
       },
       "OTP Verified"
     )
