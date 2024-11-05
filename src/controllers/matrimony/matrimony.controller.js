@@ -25,13 +25,13 @@ export const createMatrimonyProfile = asyncHandler(async (req, res) => {
     searching_for,
   } = req.body;
 
-  const existsUser = await User.findOne({ userId: id });
+  const existsUser = await User.findById(id);
 
   if (!existsUser) {
     return res.status(404).json(new ApiResponse(404, null, "User not found"));
   }
 
-  const existingMatrimonyProfile = await Matrimony.findOne({ authId: id });
+  const existingMatrimonyProfile = await Matrimony.findOne({ userId: id });
 
   if (existingMatrimonyProfile) {
     return res
@@ -43,7 +43,7 @@ export const createMatrimonyProfile = asyncHandler(async (req, res) => {
 
   if (!isAstrologer && !isAffiliate_marketer && !isAdmin) {
     const newMatrimonyProfile = new Matrimony({
-      authId: id,
+      authId: existsUser.userId,
       userId: existsUser._id,
       Fname,
       Lname,
@@ -134,42 +134,10 @@ export const getMatrimonyProfileByUserId = asyncHandler(async (req, res) => {
 export const updateMatrimonyProfileByUserId = asyncHandler(async (req, res) => {
   const { id } = req.params;
 
-  const {
-    photo,
-    city,
-    state,
-    salary,
-    age,
-    subs_plan_name,
-    subs_start_date,
-    bio,
-    isDivorce,
-    pending_likes_id,
-    sent_likes_id,
-    cast,
-    interests,
-    searching_for,
-  } = req.body;
-
   // Find and update the Matrimony profile by userId
   const updatedProfile = await Matrimony.findOneAndUpdate(
     { userId: id },
-    {
-      photo,
-      city,
-      state,
-      salary,
-      age,
-      subs_plan_name,
-      subs_start_date,
-      bio,
-      isDivorce,
-      pending_likes_id,
-      sent_likes_id,
-      cast,
-      interests,
-      searching_for,
-    },
+    req.body,
     { new: true, runValidators: true }
   );
 

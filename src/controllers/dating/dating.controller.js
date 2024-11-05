@@ -27,7 +27,7 @@ export const createDatingProfile = asyncHandler(async (req, res) => {
       looking_for,
     } = req.body;
 
-    const existsUser = await User.findOne({ userId: id });
+    const existsUser = await User.findById(id);
 
     if (!existsUser) {
       throw new ApiError(404, "User not found");
@@ -45,7 +45,7 @@ export const createDatingProfile = asyncHandler(async (req, res) => {
 
     if (!isAstrologer && !isAffiliate_marketer && !isAdmin) {
       const newDatingProfile = new Dating({
-        authId: id,
+        authId: existsUser.userId,
         userId: existsUser._id,
         photos,
         city,
@@ -86,7 +86,7 @@ export const createDatingProfile = asyncHandler(async (req, res) => {
 // Get All Dating Profiles
 export const getAllDatingProfiles = asyncHandler(async (req, res) => {
   try {
-    const datingProfiles = await Dating.find().populate("userId");
+    const datingProfiles = await Dating.find();
 
     if (!datingProfiles.length) {
       return res
@@ -113,9 +113,7 @@ export const getDatingProfileByUserId = asyncHandler(async (req, res) => {
   try {
     const { id } = req.params;
 
-    const datingProfile = await Dating.findOne({ userId: id }).populate(
-      "userId"
-    );
+    const datingProfile = await Dating.findOne({ userId: id });
 
     if (!datingProfile) {
       return res
@@ -142,42 +140,10 @@ export const updateDatingProfileByUserId = asyncHandler(async (req, res) => {
   try {
     const { id } = req.params;
 
-    const {
-      photos,
-      city,
-      state,
-      subs_plan_name,
-      subs_start_date,
-      bio,
-      smoker,
-      alcoholic,
-      pending_likes_id,
-      sent_likes_id,
-      education,
-      orientation,
-      interests,
-      looking_for,
-    } = req.body;
-
     // Find and update the profile
     const updatedProfile = await Dating.findOneAndUpdate(
       { userId: id },
-      {
-        photos,
-        city,
-        state,
-        subs_plan_name,
-        subs_start_date,
-        bio,
-        smoker,
-        alcoholic,
-        pending_likes_id,
-        sent_likes_id,
-        education,
-        orientation,
-        interests,
-        looking_for,
-      },
+      req.body,
       { new: true, runValidators: true } // `new` returns the updated document, `runValidators` ensures validation
     );
 
