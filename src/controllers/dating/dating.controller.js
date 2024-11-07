@@ -33,7 +33,7 @@ export const createDatingProfile = asyncHandler(async (req, res) => {
       throw new ApiError(404, "User not found");
     }
 
-    const existingDatingProfile = await Dating.findOne({ authId: id });
+    const existingDatingProfile = await Dating.findOne({ userId: id });
 
     if (existingDatingProfile) {
       return res
@@ -45,7 +45,7 @@ export const createDatingProfile = asyncHandler(async (req, res) => {
 
     if (!isAstrologer && !isAffiliate_marketer && !isAdmin) {
       const newDatingProfile = new Dating({
-        authId: existsUser.userId,
+        authId: existsUser.authId,
         userId: existsUser._id,
         photos,
         city,
