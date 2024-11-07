@@ -43,7 +43,7 @@ export const createMatrimonyProfile = asyncHandler(async (req, res) => {
 
   if (!isAstrologer && !isAffiliate_marketer && !isAdmin) {
     const newMatrimonyProfile = new Matrimony({
-      authId: existsUser.userId,
+      authId: existsUser.authId,
       userId: existsUser._id,
       Fname,
       Lname,

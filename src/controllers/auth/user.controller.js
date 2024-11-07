@@ -121,7 +121,7 @@ const auth_request_verify_OTP = asyncHandler(async (req, res) => {
 
   // Create a new User record
   const newUser = new User({
-    userId: newAuth._id,
+    authId: newAuth._id,
     phone,
     Fname: authRequestRecord.Fname || "",
     Lname: authRequestRecord.Lname || "",
@@ -144,7 +144,8 @@ const auth_request_verify_OTP = asyncHandler(async (req, res) => {
     new ApiResponse(
       200,
       {
-        userId: newAuth._id,
+        authId: newAuth._id,
+        userId: newUser._id,
         role: newAuth.user_type,
         phone: newUser.phone,
         accessToken,
@@ -164,6 +165,7 @@ const loginUser = asyncHandler(async (req, res) => {
   }
 
   const authRecord = await Auth.findOne({ phone });
+  const userRecord = await User.findOne({ phone });
 
   if (!authRecord) {
     throw new ApiError(404, "User does not exist");
@@ -195,7 +197,7 @@ const loginUser = asyncHandler(async (req, res) => {
     new ApiResponse(
       200,
       {
-        userId: authRecord._id,
+        userId: userRecord._id,
         role: authRecord.user_type,
         accessToken,
         refreshToken,
@@ -215,6 +217,7 @@ const login_verify_OTP = asyncHandler(async (req, res) => {
   }
 
   const authRecord = await Auth.findOne({ phone });
+  const userRecord = await User.findOne({ phone });
   if (!authRecord) {
     throw new ApiError(404, "User not found");
   }
@@ -244,7 +247,7 @@ const login_verify_OTP = asyncHandler(async (req, res) => {
     new ApiResponse(
       200,
       {
-        userId: authRecord._id,
+        userId: userRecord._id,
         role: authRecord.user_type,
         phone: authRecord.phone,
         accessToken,
