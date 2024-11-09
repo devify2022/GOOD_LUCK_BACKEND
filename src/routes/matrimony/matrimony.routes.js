@@ -4,8 +4,11 @@ import {
   deleteMatrimonyProfileByUserId,
   getAllMatrimonyProfile,
   getMatrimonyProfileByUserId,
+  getPendingLikesProfilesMatrimony,
   getRandomBrides,
   getRandomGrooms,
+  getSentLikesProfilesMatrimony,
+  sendLikeMatrimony,
   updateMatrimonyProfileByUserId,
 } from "../../controllers/matrimony/matrimony.controller.js";
 
@@ -17,6 +20,9 @@ router.route("/brides").get(getRandomBrides);
 router.route("/grooms").get(getRandomGrooms);
 router.route("/:id").get(getMatrimonyProfileByUserId);
 router.route("/update/:id").patch(updateMatrimonyProfileByUserId);
+router.post("/send_like/:senderId/:receiverId", sendLikeMatrimony);
+router.get("/get/pending_like/:userId", getPendingLikesProfilesMatrimony);
+router.get("/get/sent_like/:userId", getSentLikesProfilesMatrimony);
 router.route("/delete/:id").delete(deleteMatrimonyProfileByUserId);
 
 export default router;

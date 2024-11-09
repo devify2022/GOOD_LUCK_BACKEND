@@ -42,37 +42,52 @@ export const createMatrimonyProfile = asyncHandler(async (req, res) => {
   const { isAstrologer, isAffiliate_marketer, isAdmin } = existsUser;
 
   if (!isAstrologer && !isAffiliate_marketer && !isAdmin) {
-    const newMatrimonyProfile = new Matrimony({
-      authId: existsUser.authId,
-      userId: existsUser._id,
-      Fname,
-      Lname,
-      photo,
-      city,
-      state,
-      salary,
-      age,
-      gender,
-      subs_plan_name,
-      subs_start_date,
-      bio,
-      isDivorce,
-      cast,
-      interests,
-      searching_for,
-    });
+    try {
+      const newMatrimonyProfile = new Matrimony({
+        authId: existsUser.authId,
+        userId: existsUser._id,
+        Fname,
+        Lname,
+        photo,
+        city,
+        state,
+        salary,
+        age,
+        gender,
+        subs_plan_name,
+        subs_start_date,
+        bio,
+        isDivorce,
+        cast,
+        interests,
+        searching_for,
+      });
 
-    await newMatrimonyProfile.save();
+      await newMatrimonyProfile.save();
 
-    return res
-      .status(201)
-      .json(
-        new ApiResponse(
-          201,
-          newMatrimonyProfile,
-          "Matrimony profile created successfully"
-        )
-      );
+      return res
+        .status(201)
+        .json(
+          new ApiResponse(
+            201,
+            newMatrimonyProfile,
+            "Matrimony profile created successfully"
+          )
+        );
+    } catch (error) {
+      if (error.name === "ValidationError") {
+        const errorMessages = Object.values(error.errors).map(
+          (err) => err.message
+        );
+        console.log(errorMessages);
+        return res
+          .status(400)
+          .json(new ApiResponse(400, null, "Validation error", errorMessages));
+      }
+      return res
+        .status(500)
+        .json(new ApiResponse(500, null, "An unexpected error occurred"));
+    }
   } else {
     return res
       .status(403)
@@ -134,28 +149,41 @@ export const getMatrimonyProfileByUserId = asyncHandler(async (req, res) => {
 export const updateMatrimonyProfileByUserId = asyncHandler(async (req, res) => {
   const { id } = req.params;
 
-  // Find and update the Matrimony profile by userId
-  const updatedProfile = await Matrimony.findOneAndUpdate(
-    { userId: id },
-    req.body,
-    { new: true, runValidators: true }
-  );
-
-  if (!updatedProfile) {
-    return res
-      .status(404)
-      .json(new ApiResponse(404, null, "Matrimony profile not found"));
-  }
-
-  return res
-    .status(200)
-    .json(
-      new ApiResponse(
-        200,
-        updatedProfile,
-        "Matrimony profile updated successfully"
-      )
+  try {
+    const updatedProfile = await Matrimony.findOneAndUpdate(
+      { userId: id },
+      req.body,
+      { new: true, runValidators: true }
     );
+
+    if (!updatedProfile) {
+      return res
+        .status(404)
+        .json(new ApiResponse(404, null, "Matrimony profile not found"));
+    }
+
+    return res
+      .status(200)
+      .json(
+        new ApiResponse(
+          200,
+          updatedProfile,
+          "Matrimony profile updated successfully"
+        )
+      );
+  } catch (error) {
+    if (error.name === "ValidationError") {
+      const errorMessages = Object.values(error.errors).map(
+        (err) => err.message
+      );
+      return res
+        .status(400)
+        .json(new ApiResponse(400, null, "Validation error", errorMessages));
+    }
+    return res
+      .status(500)
+      .json(new ApiResponse(500, null, "An unexpected error occurred"));
+  }
 });
 
 // Get 5 Random Groom Profiles
@@ -202,6 +230,144 @@ export const getRandomBrides = asyncHandler(async (req, res) => {
         200,
         brides,
         "Random bride profiles retrieved successfully"
+      )
+    );
+});
+
+// Send Like to a Matrimony Profile with senderId and receiverId from params
+export const sendLikeMatrimony = asyncHandler(async (req, res) => {
+  const { senderId, receiverId } = req.params;
+
+  const senderProfile = await Matrimony.findOne({ userId: senderId });
+  const receiverProfile = await Matrimony.findOne({ userId: receiverId });
+
+  if (!senderProfile) {
+    return res
+      .status(404)
+      .json(new ApiResponse(404, null, "Sender profile not found"));
+  }
+
+  if (!receiverProfile) {
+    return res
+      .status(404)
+      .json(new ApiResponse(404, null, "Receiver profile not found"));
+  }
+
+  // Ensure sent_likes_id and pending_likes_id are arrays
+  senderProfile.sent_likes_id = senderProfile.sent_likes_id || [];
+  receiverProfile.pending_likes_id = receiverProfile.pending_likes_id || [];
+
+  // Check if the like has already been sent
+  if (senderProfile.sent_likes_id.includes(receiverId)) {
+    return res
+      .status(400)
+      .json(new ApiResponse(400, null, "Like already sent to this profile"));
+  }
+
+  try {
+    senderProfile.sent_likes_id.push(receiverId);
+    await senderProfile.save();
+
+    receiverProfile.pending_likes_id.push(senderId);
+    await receiverProfile.save();
+
+    return res
+      .status(200)
+      .json(new ApiResponse(200, null, "Like sent successfully"));
+  } catch (error) {
+    return res
+      .status(500)
+      .json(new ApiResponse(500, null, "An error occurred while sending like"));
+  }
+});
+
+// Fetch Pending Likes Excluding Sent Likes
+export const getPendingLikesProfilesMatrimony = asyncHandler(async (req, res) => {
+  const { userId } = req.params;
+
+  // Fetch the user’s profile to access pending_likes_id and sent_likes_id
+  const userProfile = await Matrimony.findOne({ userId });
+
+  if (!userProfile) {
+    return res
+      .status(404)
+      .json(new ApiResponse(404, null, "User profile not found"));
+  }
+
+  // Ensure sent_likes_id and pending_likes_id are initialized
+  const sentLikes = userProfile.sent_likes_id || [];
+  const pendingLikes = userProfile.pending_likes_id || [];
+
+  // Filter pending likes to exclude those already in sent likes
+  const filteredPendingLikes = pendingLikes.filter(
+    (likeId) => !sentLikes.includes(likeId.toString())
+  );
+
+  // If there are no pending likes, send a specific message
+  if (filteredPendingLikes.length === 0) {
+    return res
+      .status(200)
+      .json(new ApiResponse(200, null, "No pending likes found"));
+  }
+
+  // Fetch detailed profiles for each filtered pending like ID
+  const pendingLikeProfiles = await Matrimony.find({
+    userId: { $in: filteredPendingLikes },
+  }).select("Fname Lname photo city state age gender bio cast salary interests isDivorce");
+
+  return res
+    .status(200)
+    .json(
+      new ApiResponse(
+        200,
+        pendingLikeProfiles,
+        "Pending likes retrieved successfully, excluding sent likes"
+      )
+    );
+});
+
+// Fetch Sent Likes Profiles
+export const getSentLikesProfilesMatrimony = asyncHandler(async (req, res) => {
+  const { userId } = req.params;
+
+  // Fetch the user’s matrimony profile to access sent_likes_id
+  const userProfile = await Matrimony.findOne({ userId });
+
+  if (!userProfile) {
+    return res
+      .status(404)
+      .json(new ApiResponse(404, null, "User profile not found"));
+  }
+
+  // Ensure sent_likes_id is initialized
+  const sentLikes = userProfile.sent_likes_id || [];
+
+  // Check if there are no sent likes
+  if (sentLikes.length === 0) {
+    return res
+      .status(200)
+      .json(new ApiResponse(200, null, "No sent likes found"));
+  }
+
+  // Fetch detailed profiles for each user in sent_likes_id
+  const sentLikeProfiles = await Matrimony.find({
+    userId: { $in: sentLikes },
+  }).select("Fname Lname photo city state age gender bio cast salary interests isDivorce");
+
+  // If no profiles are found for sent likes, return null with a relevant message
+  if (sentLikeProfiles.length === 0) {
+    return res
+      .status(200)
+      .json(new ApiResponse(200, null, "No sent likes profiles found"));
+  }
+
+  return res
+    .status(200)
+    .json(
+      new ApiResponse(
+        200,
+        sentLikeProfiles,
+        "Sent likes profiles retrieved successfully"
       )
     );
 });

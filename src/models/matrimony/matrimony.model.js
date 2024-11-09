@@ -58,11 +58,15 @@ const matrimonySchema = new Schema(
       type: Boolean,
       default: false,
     },
-    pending_likes_id: {
-      type: Schema.Types.ObjectId,
-    },
     sent_likes_id: {
-      type: Schema.Types.ObjectId,
+      type: [Schema.Types.ObjectId],
+      ref: "Matrimony",
+      default: [],
+    },
+    pending_likes_id: {
+      type: [Schema.Types.ObjectId],
+      ref: "Matrimony",
+      default: [],
     },
     gender: {
       type: String,
