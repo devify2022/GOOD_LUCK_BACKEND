@@ -12,6 +12,14 @@ const datingSchema = new Schema(
       ref: "User",
       required: true,
     },
+    Fname: {
+      type: String,
+      required: [true, "First name is required"],
+    },
+    Lname: {
+      type: String,
+      required: [true, "Last name is required"],
+    },
     age: {
       type: Number,
       required: [true, "Age is required"],

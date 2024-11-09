@@ -10,6 +10,8 @@ export const createDatingProfile = asyncHandler(async (req, res) => {
     const { id } = req.params;
 
     const {
+      Fname, // Add Fname
+      Lname, // Add Lname
       photos,
       city,
       state,
@@ -19,8 +21,6 @@ export const createDatingProfile = asyncHandler(async (req, res) => {
       bio,
       smoker,
       alcoholic,
-      pending_likes_id,
-      sent_likes_id,
       education,
       orientation,
       interests,
@@ -47,6 +47,8 @@ export const createDatingProfile = asyncHandler(async (req, res) => {
       const newDatingProfile = new Dating({
         authId: existsUser.authId,
         userId: existsUser._id,
+        Fname, // Add Fname
+        Lname, // Add Lname
         photos,
         city,
         age,
@@ -56,8 +58,6 @@ export const createDatingProfile = asyncHandler(async (req, res) => {
         bio,
         smoker,
         alcoholic,
-        pending_likes_id,
-        sent_likes_id,
         education,
         orientation,
         interests,
