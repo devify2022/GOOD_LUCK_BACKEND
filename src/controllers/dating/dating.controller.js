@@ -190,7 +190,7 @@ export const updateDatingProfileByUserId = asyncHandler(async (req, res) => {
   }
 });
 
-// Get Random Male Profiles
+// Get Random Male Profile
 export const getRandomMaleProfiles = asyncHandler(async (req, res) => {
   try {
     // Get random profiles where 'looking_for' is 'male'
@@ -221,7 +221,7 @@ export const getRandomMaleProfiles = asyncHandler(async (req, res) => {
   }
 });
 
-// Get Random Female Profiles
+// Get Random Female Profile
 export const getRandomFemaleProfiles = asyncHandler(async (req, res) => {
   try {
     // Get random profiles where 'looking_for' is 'female'
