@@ -190,6 +190,68 @@ export const updateDatingProfileByUserId = asyncHandler(async (req, res) => {
   }
 });
 
+// Get Random Male Profiles
+export const getRandomMaleProfiles = asyncHandler(async (req, res) => {
+  try {
+    // Get random profiles where 'looking_for' is 'male'
+    const randomMaleProfiles = await Dating.aggregate([
+      { $match: { looking_for: "male" } },
+      { $sample: { size: 5 } }, // Randomly pick up to 5 profiles
+    ]);
+
+    if (randomMaleProfiles.length === 0) {
+      return res
+        .status(404)
+        .json(new ApiResponse(404, null, "No male profiles found"));
+    }
+
+    return res
+      .status(200)
+      .json(
+        new ApiResponse(
+          200,
+          randomMaleProfiles,
+          "Random male profiles retrieved successfully"
+        )
+      );
+  } catch (error) {
+    return res
+      .status(500)
+      .json(new ApiResponse(500, null, "An unexpected error occurred"));
+  }
+});
+
+// Get Random Female Profiles
+export const getRandomFemaleProfiles = asyncHandler(async (req, res) => {
+  try {
+    // Get random profiles where 'looking_for' is 'female'
+    const randomFemaleProfiles = await Dating.aggregate([
+      { $match: { looking_for: "female" } },
+      { $sample: { size: 5 } }, // Randomly pick up to 5 profiles
+    ]);
+
+    if (randomFemaleProfiles.length === 0) {
+      return res
+        .status(404)
+        .json(new ApiResponse(404, null, "No female profiles found"));
+    }
+
+    return res
+      .status(200)
+      .json(
+        new ApiResponse(
+          200,
+          randomFemaleProfiles,
+          "Random female profiles retrieved successfully"
+        )
+      );
+  } catch (error) {
+    return res
+      .status(500)
+      .json(new ApiResponse(500, null, "An unexpected error occurred"));
+  }
+});
+
 // Send Like API for Dating Profile with senderId and receiverId from params
 export const sendLikeDating = asyncHandler(async (req, res) => {
   const { senderId, receiverId } = req.params; // Extract senderId and receiverId from params
