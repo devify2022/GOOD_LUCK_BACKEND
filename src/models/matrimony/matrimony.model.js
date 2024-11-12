@@ -98,6 +98,14 @@ const matrimonySchema = new Schema(
       ],
       required: true,
     },
+    whatsappNumber: {
+      type: String,
+      required: true,
+    },
+    facebookLink: {
+      type: String,
+      required: true,
+    },
   },
   { timestamps: true }
 );

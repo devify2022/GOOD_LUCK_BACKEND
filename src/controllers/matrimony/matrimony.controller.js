@@ -23,6 +23,8 @@ export const createMatrimonyProfile = asyncHandler(async (req, res) => {
     cast,
     interests,
     searching_for,
+    whatsappNumber,
+    facebookLink
   } = req.body;
 
   const existsUser = await User.findById(id);
@@ -61,6 +63,8 @@ export const createMatrimonyProfile = asyncHandler(async (req, res) => {
         cast,
         interests,
         searching_for,
+        facebookLink,
+        whatsappNumber
       });
 
       await newMatrimonyProfile.save();
