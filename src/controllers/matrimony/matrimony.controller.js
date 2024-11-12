@@ -24,7 +24,7 @@ export const createMatrimonyProfile = asyncHandler(async (req, res) => {
     interests,
     searching_for,
     whatsappNumber,
-    facebookLink
+    facebookLink,
   } = req.body;
 
   const existsUser = await User.findById(id);
@@ -64,7 +64,7 @@ export const createMatrimonyProfile = asyncHandler(async (req, res) => {
         interests,
         searching_for,
         facebookLink,
-        whatsappNumber
+        whatsappNumber,
       });
 
       await newMatrimonyProfile.save();
@@ -279,6 +279,16 @@ export const sendLikeMatrimony = asyncHandler(async (req, res) => {
       .status(200)
       .json(new ApiResponse(200, null, "Like sent successfully"));
   } catch (error) {
+    if (error.name === "ValidationError") {
+      // Extract the specific validation error messages
+      const messages = Object.values(error.errors).map((err) => err.message);
+      return res
+        .status(400)
+        .json(
+          new ApiResponse(400, null, `Validation Error: ${messages.join(", ")}`)
+        );
+    }
+    console.log(error);
     return res
       .status(500)
       .json(new ApiResponse(500, null, "An error occurred while sending like"));
@@ -286,49 +296,53 @@ export const sendLikeMatrimony = asyncHandler(async (req, res) => {
 });
 
 // Fetch Pending Likes Excluding Sent Likes
-export const getPendingLikesProfilesMatrimony = asyncHandler(async (req, res) => {
-  const { userId } = req.params;
+export const getPendingLikesProfilesMatrimony = asyncHandler(
+  async (req, res) => {
+    const { userId } = req.params;
 
-  // Fetch the user’s profile to access pending_likes_id and sent_likes_id
-  const userProfile = await Matrimony.findOne({ userId });
+    // Fetch the user’s profile to access pending_likes_id and sent_likes_id
+    const userProfile = await Matrimony.findOne({ userId });
 
-  if (!userProfile) {
-    return res
-      .status(404)
-      .json(new ApiResponse(404, null, "User profile not found"));
-  }
+    if (!userProfile) {
+      return res
+        .status(404)
+        .json(new ApiResponse(404, null, "User profile not found"));
+    }
 
-  // Ensure sent_likes_id and pending_likes_id are initialized
-  const sentLikes = userProfile.sent_likes_id || [];
-  const pendingLikes = userProfile.pending_likes_id || [];
+    // Ensure sent_likes_id and pending_likes_id are initialized
+    const sentLikes = userProfile.sent_likes_id || [];
+    const pendingLikes = userProfile.pending_likes_id || [];
 
-  // Filter pending likes to exclude those already in sent likes
-  const filteredPendingLikes = pendingLikes.filter(
-    (likeId) => !sentLikes.includes(likeId.toString())
-  );
+    // Filter pending likes to exclude those already in sent likes
+    const filteredPendingLikes = pendingLikes.filter(
+      (likeId) => !sentLikes.includes(likeId.toString())
+    );
 
-  // If there are no pending likes, send a specific message
-  if (filteredPendingLikes.length === 0) {
+    // If there are no pending likes, send a specific message
+    if (filteredPendingLikes.length === 0) {
+      return res
+        .status(200)
+        .json(new ApiResponse(200, null, "No pending likes found"));
+    }
+
+    // Fetch detailed profiles for each filtered pending like ID
+    const pendingLikeProfiles = await Matrimony.find({
+      userId: { $in: filteredPendingLikes },
+    }).select(
+      "Fname Lname photo city state age gender bio cast salary interests isDivorce"
+    );
+
     return res
       .status(200)
-      .json(new ApiResponse(200, null, "No pending likes found"));
+      .json(
+        new ApiResponse(
+          200,
+          pendingLikeProfiles,
+          "Pending likes retrieved successfully, excluding sent likes"
+        )
+      );
   }
-
-  // Fetch detailed profiles for each filtered pending like ID
-  const pendingLikeProfiles = await Matrimony.find({
-    userId: { $in: filteredPendingLikes },
-  }).select("Fname Lname photo city state age gender bio cast salary interests isDivorce");
-
-  return res
-    .status(200)
-    .json(
-      new ApiResponse(
-        200,
-        pendingLikeProfiles,
-        "Pending likes retrieved successfully, excluding sent likes"
-      )
-    );
-});
+);
 
 // Fetch Sent Likes Profiles
 export const getSentLikesProfilesMatrimony = asyncHandler(async (req, res) => {
@@ -356,7 +370,9 @@ export const getSentLikesProfilesMatrimony = asyncHandler(async (req, res) => {
   // Fetch detailed profiles for each user in sent_likes_id
   const sentLikeProfiles = await Matrimony.find({
     userId: { $in: sentLikes },
-  }).select("Fname Lname photo city state age gender bio cast salary interests isDivorce");
+  }).select(
+    "Fname Lname photo city state age gender bio cast salary interests isDivorce"
+  );
 
   // If no profiles are found for sent likes, return null with a relevant message
   if (sentLikeProfiles.length === 0) {
