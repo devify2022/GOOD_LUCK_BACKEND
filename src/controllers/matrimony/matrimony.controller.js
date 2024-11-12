@@ -270,25 +270,15 @@ export const sendLikeMatrimony = asyncHandler(async (req, res) => {
 
   try {
     senderProfile.sent_likes_id.push(receiverId);
-    await senderProfile.save();
+    await senderProfile.save({ validateModifiedOnly: true });
 
     receiverProfile.pending_likes_id.push(senderId);
-    await receiverProfile.save();
+    await receiverProfile.save({ validateModifiedOnly: true });
 
     return res
       .status(200)
       .json(new ApiResponse(200, null, "Like sent successfully"));
   } catch (error) {
-    if (error.name === "ValidationError") {
-      // Extract the specific validation error messages
-      const messages = Object.values(error.errors).map((err) => err.message);
-      return res
-        .status(400)
-        .json(
-          new ApiResponse(400, null, `Validation Error: ${messages.join(", ")}`)
-        );
-    }
-    console.log(error);
     return res
       .status(500)
       .json(new ApiResponse(500, null, "An error occurred while sending like"));
