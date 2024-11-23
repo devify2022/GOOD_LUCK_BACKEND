@@ -1,13 +1,21 @@
 import express from "express";
 import cors from "cors";
+import http from "http";
 import errorHandler from "./middlewares/errorMiddleware.js";
+import { setupSocketIO } from "./socket.js";
 
 const app = express();
 
+// Create HTTP server and attach Express app
+const server = http.createServer(app);
+
+// Initialize Socket.IO by passing the server
+setupSocketIO(server); // Use the same server for Socket.IO
+
 app.use(
   cors({
-    origin: process.env.CORS_ORIGIN,
-    credentials: true,
+    origin: "http://localhost:3000", // Specify allowed origin
+    credentials: true, // Allow credentials (cookies, etc.)
   })
 );
 
@@ -19,17 +27,20 @@ app.use(express.static("public"));
 import userRoutes from "./routes/auth/user.routes.js";
 import astrologerRoutes from "./routes/astrologer/astrologer.route.js";
 import datingRoutes from "./routes/dating/dating.routes.js";
+import datingMatchedRoutes from "./routes/dating/matches.routes.js";
+import datingChatRoutes from "./routes/dating/chatRoutes.js";
 import matrimonyRoutes from "./routes/matrimony/matrimony.routes.js";
 import productCategoryRoutes from "./routes/product/productcategory.routes.js";
 import productRoutes from "./routes/product/product.routes.js";
 import orderRoutes from "./routes/product/order.routes.js";
 import paymentRouter from "./routes/payment/payment.routes.js";
 
-
 // Use routes
 app.use("/good_luck/api/v1/auth", userRoutes);
 app.use("/good_luck/api/v1/astrologer", astrologerRoutes);
 app.use("/good_luck/api/v1/dating", datingRoutes);
+app.use("/good_luck/api/v1/matchedProfile", datingMatchedRoutes);
+app.use("/good_luck/api/v1/datingChat", datingChatRoutes);
 app.use("/good_luck/api/v1/matrimony", matrimonyRoutes);
 app.use("/good_luck/api/v1/productCategory", productCategoryRoutes);
 app.use("/good_luck/api/v1/product", productRoutes);
@@ -43,4 +54,4 @@ app.get("/", (req, res) => {
 // Error handling middleware
 app.use(errorHandler);
 
-export { app };
+export { app, server };

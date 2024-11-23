@@ -1,8 +1,10 @@
+import mongoose from "mongoose";
 import { User } from "../../models/auth/user.model.js";
 import { Dating } from "../../models/dating/dating.model.js";
 import { ApiError } from "../../utils/apiError.js";
 import { ApiResponse } from "../../utils/apiResponse.js";
 import { asyncHandler } from "../../utils/asyncHandler.js";
+import { MatchedProfileDating } from "../../models/dating/matchedProfileDating.model.js";
 
 // Create Dating Profile
 export const createDatingProfile = asyncHandler(async (req, res) => {
@@ -254,7 +256,23 @@ export const getRandomFemaleProfiles = asyncHandler(async (req, res) => {
 
 // Send Like API for Dating Profile with senderId and receiverId from params
 export const sendLikeDating = asyncHandler(async (req, res) => {
-  const { senderId, receiverId } = req.params; // Extract senderId and receiverId from params
+  const { senderId, receiverId } = req.params; 
+
+  // Check if a match already exists in MatchedProfileDating
+  const existingMatch = await MatchedProfileDating.findOne({
+    $or: [
+      { user1: senderId, user2: receiverId },
+      { user1: receiverId, user2: senderId },
+    ],
+  });
+
+  if (existingMatch) {
+    return res
+      .status(400)
+      .json(
+        new ApiResponse(400, null, "You are already matched with this profile!")
+      );
+  }
 
   // Fetch the sender's dating profile
   const senderProfile = await Dating.findOne({ userId: senderId });
@@ -276,7 +294,43 @@ export const sendLikeDating = asyncHandler(async (req, res) => {
 
   // Ensure sent_likes_id and pending_likes_id are arrays
   senderProfile.sent_likes_id = senderProfile.sent_likes_id || [];
+  senderProfile.pending_likes_id = senderProfile.pending_likes_id || [];
   targetProfile.pending_likes_id = targetProfile.pending_likes_id || [];
+  targetProfile.sent_likes_id = targetProfile.sent_likes_id || [];
+
+  // Check if the receiverId is in the sender's pending_likes_id
+  if (senderProfile.pending_likes_id.some((id) => id.equals(receiverId))) {
+    // If the receiverId exists in pending_likes_id, it's a match
+    senderProfile.pending_likes_id = senderProfile.pending_likes_id.filter(
+      (id) => !id.equals(receiverId)
+    );
+    targetProfile.pending_likes_id = targetProfile.pending_likes_id.filter(
+      (id) => !id.equals(senderId)
+    );
+
+    senderProfile.sent_likes_id.push(receiverId);
+    targetProfile.sent_likes_id.push(senderId);
+
+    // Save both profiles
+    await senderProfile.save();
+    await targetProfile.save();
+
+    // Save the match to MatchedProfileDating
+    await MatchedProfileDating.create({
+      user1: senderId,
+      user2: receiverId,
+    });
+
+    return res
+      .status(200)
+      .json(
+        new ApiResponse(
+          200,
+          { match: true },
+          "You have matched with this profile!"
+        )
+      );
+  }
 
   // Check if the like has already been sent
   if (senderProfile.sent_likes_id.includes(receiverId)) {
@@ -285,19 +339,9 @@ export const sendLikeDating = asyncHandler(async (req, res) => {
       .json(new ApiResponse(400, null, "Like already sent to this profile"));
   }
 
-  // Check if the target profile already has the sender in their pending likes
-  if (targetProfile.pending_likes_id.includes(senderId)) {
-    // If the sender is already in the pending likes of the target profile, move it to sent_likes_id
-    targetProfile.sent_likes_id.push(senderId);
-    targetProfile.pending_likes_id = targetProfile.pending_likes_id.filter(
-      (id) => !id.equals(senderId)
-    );
-    await targetProfile.save();
-  } else {
-    // If not, add the sender to the target profile's pending likes
-    targetProfile.pending_likes_id.push(senderId);
-    await targetProfile.save();
-  }
+  // Add the sender to the target profile's pending likes
+  targetProfile.pending_likes_id.push(senderId);
+  await targetProfile.save();
 
   // Add the target profile's userId to the sender's sent_likes_id
   senderProfile.sent_likes_id.push(receiverId);
@@ -305,66 +349,72 @@ export const sendLikeDating = asyncHandler(async (req, res) => {
 
   return res
     .status(200)
-    .json(new ApiResponse(200, null, "Like sent successfully"));
+    .json(new ApiResponse(200, { match: false }, "Like sent successfully"));
 });
 
 // Get Pending Likes Profiles API
 export const getPendingLikesProfilesDating = asyncHandler(async (req, res) => {
   const { userId } = req.params;
 
-  // Fetch the user's dating profile
   const userProfile = await Dating.findOne({ userId });
-
   if (!userProfile) {
     return res
       .status(404)
       .json(new ApiResponse(404, null, "User profile not found"));
   }
 
-  // Get the pending likes (user IDs)
-  const pendingLikes = userProfile.pending_likes_id;
+  const pendingLikes = userProfile.pending_likes_id || [];
+  const sentLikes = userProfile.sent_likes_id || [];
 
-  if (pendingLikes.length === 0) {
-    return res
-      .status(200)
-      .json(new ApiResponse(200, null, "No pending likes found"));
-  }
-
-  // Get the sent likes to exclude them from pending likes
-  const sentLikes = userProfile.sent_likes_id;
-
-  // Filter pending likes to exclude those that are already in sent likes
   const filteredPendingLikes = pendingLikes.filter(
-    (pendingLikeId) =>
-      !sentLikes.some((sentLikeId) => sentLikeId.equals(pendingLikeId))
+    (pendingLikeId) => !sentLikes.includes(pendingLikeId.toString())
   );
 
   if (filteredPendingLikes.length === 0) {
     return res
       .status(200)
+      .json(new ApiResponse(200, null, "No pending likes left"));
+  }
+
+  console.log("Filtered Pending Likes:", filteredPendingLikes);
+
+  try {
+    const validObjectIds = filteredPendingLikes.filter((id) =>
+      mongoose.Types.ObjectId.isValid(id)
+    );
+
+    console.log("Valid Object IDs:", validObjectIds);
+
+    // Test query for both ObjectId and String
+    const pendingProfiles = await Dating.find({
+      $or: [
+        { userId: { $in: validObjectIds } },
+        { userId: { $in: validObjectIds.map((id) => id.toString()) } },
+      ],
+    }).select("userId Fname Lname photos city state age gender bio");
+
+    if (pendingProfiles.length === 0) {
+      console.log("No matching profiles found for query.");
+      return res
+        .status(200)
+        .json(new ApiResponse(200, null, "No matching profiles found"));
+    }
+
+    console.log("Pending Profiles:", pendingProfiles);
+
+    return res
+      .status(200)
       .json(
         new ApiResponse(
           200,
-          null,
-          "No pending likes left after excluding sent likes"
+          pendingProfiles,
+          "Pending likes retrieved successfully"
         )
       );
+  } catch (error) {
+    console.error("Error fetching profiles:", error);
+    return res.status(500).json(new ApiResponse(500, null, "Server error"));
   }
-
-  // Fetch profiles of users who have pending likes for this user
-  const pendingProfiles = await Dating.find({
-    userId: { $in: filteredPendingLikes },
-  }).select("Fname Lname photos city state age gender bio");
-
-  return res
-    .status(200)
-    .json(
-      new ApiResponse(
-        200,
-        pendingProfiles,
-        "Pending likes retrieved successfully"
-      )
-    );
 });
 
 // Get Sent Likes Profiles API
@@ -391,7 +441,7 @@ export const getSentLikesProfilesDating = asyncHandler(async (req, res) => {
 
   // Fetch profiles of users to whom the current user has sent likes
   const sentProfiles = await Dating.find({ userId: { $in: sentLikes } }).select(
-    "Fname Lname photos city state age gender bio"
+    "userId Fname Lname photos city state age gender bio"
   );
 
   return res

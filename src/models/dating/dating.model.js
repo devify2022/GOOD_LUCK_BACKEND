@@ -12,6 +12,11 @@ const datingSchema = new Schema(
       ref: "User",
       required: true,
     },
+    socketId: {
+      // Add socketId field
+      type: String,
+      default: null,
+    },
     Fname: {
       type: String,
       required: [true, "First name is required"],

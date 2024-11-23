@@ -10,6 +10,7 @@ import {
   updateDatingProfileByUserId,
   getRandomMaleProfiles,
   getRandomFemaleProfiles,
+  // getMatchesProfilesDating,
 } from "../../controllers/dating/dating.controller.js";
 
 const router = Router();
@@ -21,8 +22,9 @@ router.route("/female").get(getRandomFemaleProfiles);
 router.route("/:id").get(getDatingProfileByUserId);
 router.route("/update/:id").patch(updateDatingProfileByUserId);
 router.post("/send_like/:senderId/:receiverId", sendLikeDating);
-router.get("/get/pending_like/:userId", getPendingLikesProfilesDating);
-router.get("/get/sent_like/:userId", getSentLikesProfilesDating);
+router.get("/pending_like/:userId", getPendingLikesProfilesDating);
+router.get("/sent_like/:userId", getSentLikesProfilesDating);
+// router.get("/matched/:userId", getMatchesProfilesDating);
 router.route("/delete/:id").delete(deleteDatingProfileByUserId);
 
 export default router;
