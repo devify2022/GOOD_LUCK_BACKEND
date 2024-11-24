@@ -3,13 +3,11 @@ import mongoose, { Schema } from "mongoose";
 // Define the schema for storing messages in the chat
 const chatMessageSchema = new Schema(
   {
-    matchId: [
-      {
-        type: Schema.Types.ObjectId,
-        ref: "MatchedProfileDating", // Reference to the matched profile to associate messages with the match
-        required: true,
-      },
-    ],
+    matchId: {
+      type: Schema.Types.ObjectId,
+      ref: "MatchedProfileDating", // Reference to the matched profile to associate messages with the match
+      required: true,
+    },
     messages: [
       {
         senderId: {

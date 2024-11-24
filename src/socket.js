@@ -2,6 +2,7 @@ import { Server } from "socket.io";
 import { Chat } from "./models/dating/chatModel.js";
 import { Dating } from "./models/dating/dating.model.js";
 import mongoose from "mongoose";
+import { MatchedProfileDating } from "./models/dating/matchedProfileDating.model.js";
 
 export const setupSocketIO = (server) => {
   const io = new Server(server, {
@@ -41,61 +42,83 @@ export const setupSocketIO = (server) => {
 
     // Handle sending messages
     socket.on("send_message", async (messageData) => {
-      const { senderId, receiverId, message } = messageData;
-      // console.log(messageData);
+      const { senderId, matchId, message } = messageData;
 
       try {
-        // Cast the senderId and receiverId to ObjectId
+        // Convert IDs to ObjectId format
         const senderObjectId = new mongoose.Types.ObjectId(senderId);
-        const receiverObjectId = new mongoose.Types.ObjectId(receiverId);
+        const matchObjectId = new mongoose.Types.ObjectId(matchId);
 
-        // Find the existing chat between the sender and receiver
-        let chat = await Chat.findOne({
-          matchId: { $all: [senderObjectId, receiverObjectId] }, // Use $all to check for both ObjectIds
+        // Fetch the chat by matchId
+        const chat = await Chat.findOne({ matchId: matchObjectId });
+
+        if (!chat) {
+          // If no chat is found for this matchId, emit an error and return
+          return socket.emit("error", {
+            message: "Chat not found for this matchId.",
+          });
+        }
+
+        // Add the new message to the chat
+        const newMessage = {
+          senderId: senderObjectId,
+          message,
+          timestamp: Date.now(),
+        };
+
+        chat.messages.push(newMessage); // Add message to the array
+        await chat.save(); // Save the updated chat
+
+        console.log("Message added to chat:", chat);
+
+        const existingMatch = await MatchedProfileDating.findById(matchId);
+
+        if (!existingMatch) {
+          // If no match is found for this matchId, emit an error and return
+          return socket.emit("error", {
+            message: "Match not found for this matchId.",
+          });
+        }
+
+        // Use $or to find users by user1 and user2
+        const matchedUsers = await Dating.find({
+          $or: [
+            { userId: existingMatch.user1 },
+            { userId: existingMatch.user2 },
+          ],
         });
 
-        // If no chat is found, create a new one
-        if (!chat) {
-          chat = new Chat({
-            matchId: [senderObjectId, receiverObjectId], // Store ObjectId array
-            messages: [
-              {
-                senderId: senderObjectId,
-                message,
-                timestamp: Date.now(),
-              },
-            ],
-          });
-
-          // Save the new chat document
-          await chat.save();
-          console.log("Created new chat:", chat);
-        } else {
-          // If a chat exists, just push the new message to the existing chat
-          chat.messages.push({
-            senderId: senderObjectId,
-            message,
-            timestamp: Date.now(),
-          });
-
-          await chat.save();
-          console.log("Added message to existing chat:", chat);
+        if (!matchedUsers || matchedUsers.length === 0) {
+          // Handle the case where no users are found
+          return socket.emit("error", { message: "Matched users not found." });
         }
 
-        // Emit the message to the receiver if online
-        const receiver = await Dating.findOne({ userId: receiverId });
-        if (receiver && receiver.socketId) {
-          io.to(receiver.socketId).emit("new_message", {
-            senderId: senderObjectId,
-            message,
-            timestamp: Date.now(),
-          });
-        } else {
-          console.log(`Receiver not connected or socketId not found.`);
-        }
+        // Notify both users (sender and receiver)
+        matchedUsers.forEach((user) => {
+          if (user.socketId) {
+            const isSender = String(user.userId) === senderId;
+
+            io.to(user.socketId).emit("new_message", {
+              senderId,
+              matchId,
+              message,
+              timestamp: newMessage.timestamp,
+              fromSender: isSender, // Indicates whether the message is sent by this user
+            });
+
+            console.log(
+              `Message sent to ${isSender ? "sender" : "receiver"}:`,
+              user.userId
+            );
+          } else {
+            console.log(
+              `User ${user.userId} is offline or socketId is not available.`
+            );
+          }
+        });
       } catch (error) {
         console.error("Error sending message:", error);
-        socket.emit("error", { message: "Error sending message" });
+        socket.emit("error", { message: "Error sending message." });
       }
     });
 

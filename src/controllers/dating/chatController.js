@@ -1,3 +1,4 @@
+import mongoose from "mongoose";
 import { Chat } from "../../models/dating/chatModel.js";
 import { MatchedProfileDating } from "../../models/dating/matchedProfileDating.model.js";
 import { ApiResponse } from "../../utils/apiResponse.js";
@@ -49,4 +50,108 @@ export const createChatForMatch = asyncHandler(async (req, res) => {
         "Chat created and linked to the match successfully"
       )
     );
+});
+
+// Function to fetch messages by matchId and userId
+export const getMessagesByMatchAndUserId = asyncHandler(async (req, res) => {
+  const { matchId, userId } = req.params; // Extract matchId and userId from route parameters
+
+  if (!matchId || !userId) {
+    return res
+      .status(400)
+      .json(new ApiResponse(400, null, "Match ID and User ID are required"));
+  }
+
+  try {
+    const matchObjectId = new mongoose.Types.ObjectId(matchId); // Convert matchId to ObjectId
+    const userObjectId = new mongoose.Types.ObjectId(userId); // Convert userId to ObjectId
+
+    // Query the Chat model for a chat with the specified matchId
+    const chat = await Chat.findOne({
+      matchId: matchObjectId, // Match the matchId
+    }).select("matchId messages"); // Select relevant fields
+
+    if (!chat) {
+      return res
+        .status(404)
+        .json(
+          new ApiResponse(404, null, "Chat not found for the specified matchId")
+        );
+    }
+
+    // Filter messages involving the user
+    const userMessages = chat.messages.filter(
+      (msg) => String(msg.senderId) === userId
+    );
+
+    if (userMessages.length === 0) {
+      return res
+        .status(404)
+        .json(
+          new ApiResponse(
+            404,
+            null,
+            "No messages found for the user in this chat"
+          )
+        );
+    }
+
+    return res
+      .status(200)
+      .json(
+        new ApiResponse(
+          200,
+          { matchId, messages: userMessages },
+          "Messages retrieved successfully"
+        )
+      );
+  } catch (error) {
+    console.error("Error fetching messages by matchId and userId:", error);
+    return res
+      .status(500)
+      .json(new ApiResponse(500, null, "Error retrieving messages"));
+  }
+});
+
+// Function to fetch messages by matchId
+export const getMessagesByMatchId = asyncHandler(async (req, res) => {
+  const { matchId } = req.params; // Extract matchId from route parameters
+
+  if (!matchId) {
+    return res
+      .status(400)
+      .json(new ApiResponse(400, null, "Match ID is required"));
+  }
+
+  try {
+    const matchObjectId = new mongoose.Types.ObjectId(matchId); // Convert matchId to ObjectId
+
+    // Query the Chat model for a chat with the specified matchId
+    const chat = await Chat.findOne({
+      matchId: matchObjectId, // Match the matchId
+    }).select("matchId messages"); // Select relevant fields
+
+    if (!chat) {
+      return res
+        .status(404)
+        .json(
+          new ApiResponse(404, null, "Chat not found for the specified matchId")
+        );
+    }
+
+    return res
+      .status(200)
+      .json(
+        new ApiResponse(
+          200,
+          { matchId, messages: chat.messages },
+          "Messages retrieved successfully"
+        )
+      );
+  } catch (error) {
+    console.error("Error fetching messages by matchId:", error);
+    return res
+      .status(500)
+      .json(new ApiResponse(500, null, "Error retrieving messages"));
+  }
 });
