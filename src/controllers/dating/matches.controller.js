@@ -25,27 +25,25 @@ export const getMatchesByUserId = asyncHandler(async (req, res) => {
       .json(new ApiResponse(404, null, "No matches found for this user"));
   }
 
-  // Fetch data from Dating collection for each user1 and user2
+  // Fetch data from Dating collection for the other user
   const matchData = await Promise.all(
     matches.map(async (match) => {
-      const user1Data = await Dating.findOne({ userId: match.user1 }).select(
-        "Fname Lname photos city state bio interests"
-      );
-      const user2Data = await Dating.findOne({ userId: match.user2 }).select(
-        "Fname Lname photos city state bio interests"
-      );
+      // Identify the other user in the match
+      const otherUserId = match.user1 === userId ? match.user2 : match.user1;
+
+      // Fetch the other user's details
+      const otherUserData = await Dating.findOne({
+        userId: otherUserId,
+      }).select("userId Fname Lname photos city state bio interests");
 
       return {
         matchId: match._id,
-        matchDate: match.matchDate,
-        isActive: match.isActive,
-        matchedUser1: user1Data || {},
-        matchedUser2: user2Data || {},
+        otherUser: otherUserData || {}, // Only include the other user's details
       };
     })
   );
 
-  // Return matches with populated user details in the response
+  // Return matches with populated other user details in the response
   return res
     .status(200)
     .json(new ApiResponse(200, matchData, "Matches retrieved successfully"));
