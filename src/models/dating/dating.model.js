@@ -92,7 +92,7 @@ const datingSchema = new Schema(
       required: true,
     },
     interests: {
-      type: String,
+      type: [String],
       enum: [
         "badminton",
         "football",

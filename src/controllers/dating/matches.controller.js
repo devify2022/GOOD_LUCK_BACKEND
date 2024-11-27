@@ -29,7 +29,7 @@ export const getMatchesByUserId = asyncHandler(async (req, res) => {
   const matchData = await Promise.all(
     matches.map(async (match) => {
       // Identify the other user in the match
-      const otherUserId = match.user1 === userId ? match.user2 : match.user1;
+      const otherUserId = match.user2;
 
       // Fetch the other user's details
       const otherUserData = await Dating.findOne({

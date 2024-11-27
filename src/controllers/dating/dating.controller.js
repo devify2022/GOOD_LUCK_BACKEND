@@ -28,7 +28,7 @@ export const createDatingProfile = asyncHandler(async (req, res) => {
       interests,
       looking_for,
     } = req.body;
-
+    console.log(req.body);
     const existsUser = await User.findById(id);
 
     if (!existsUser) {
@@ -65,6 +65,7 @@ export const createDatingProfile = asyncHandler(async (req, res) => {
         interests,
         looking_for,
       });
+      console.log(newDatingProfile);
 
       await newDatingProfile.save();
 
@@ -162,6 +163,8 @@ export const updateDatingProfileByUserId = asyncHandler(async (req, res) => {
       { new: true, runValidators: true }
     );
 
+    console.log(updatedProfile, req.body);
+
     if (!updatedProfile) {
       return res
         .status(404)
@@ -256,8 +259,8 @@ export const getRandomFemaleProfiles = asyncHandler(async (req, res) => {
 
 // Send Like API for Dating Profile with senderId and receiverId from params
 export const sendLikeDating = asyncHandler(async (req, res) => {
-  const { senderId, receiverId } = req.params; 
-
+  const { senderId, receiverId } = req.params;
+  console.log(senderId, receiverId);
   // Check if a match already exists in MatchedProfileDating
   const existingMatch = await MatchedProfileDating.findOne({
     $or: [
@@ -392,6 +395,7 @@ export const getPendingLikesProfilesDating = asyncHandler(async (req, res) => {
         { userId: { $in: validObjectIds.map((id) => id.toString()) } },
       ],
     }).select("userId Fname Lname photos city state age gender bio");
+    console.log(pendingProfiles, "gettig profiles");
 
     if (pendingProfiles.length === 0) {
       console.log("No matching profiles found for query.");
