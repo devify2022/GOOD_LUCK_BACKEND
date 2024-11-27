@@ -18,6 +18,7 @@ export const createDatingProfile = asyncHandler(async (req, res) => {
       city,
       state,
       age,
+      subscribed,
       subs_plan_name,
       subs_start_date,
       bio,
@@ -55,6 +56,7 @@ export const createDatingProfile = asyncHandler(async (req, res) => {
         city,
         age,
         state,
+        subscribed,
         subs_plan_name,
         subs_start_date,
         bio,
@@ -65,7 +67,7 @@ export const createDatingProfile = asyncHandler(async (req, res) => {
         interests,
         looking_for,
       });
-      console.log(newDatingProfile);
+      // console.log(newDatingProfile);
 
       await newDatingProfile.save();
 
@@ -195,43 +197,78 @@ export const updateDatingProfileByUserId = asyncHandler(async (req, res) => {
   }
 });
 
-// Get Random Male Profile
+// Get Random Male Profiles
 export const getRandomMaleProfiles = asyncHandler(async (req, res) => {
   try {
-    // Get random profiles where 'looking_for' is 'male'
-    const randomMaleProfiles = await Dating.aggregate([
-      { $match: { looking_for: "male" } },
-      { $sample: { size: 5 } }, // Randomly pick up to 5 profiles
-    ]);
+    const { userId } = req.params; // Assuming userId is passed as a parameter
 
-    if (randomMaleProfiles.length === 0) {
-      return res
-        .status(404)
-        .json(new ApiResponse(404, null, "No male profiles found"));
+    // Fetch the user's data to get their sent_likes_id and pending_likes_id
+    const user = await Dating.findOne({ userId });
+
+    if (!user) {
+      return res.status(404).json({
+        statusCode: 404,
+        data: null,
+        message: "User not found",
+        success: false,
+        errors: null,
+      });
     }
 
-    return res
-      .status(200)
-      .json(
-        new ApiResponse(
-          200,
-          randomMaleProfiles,
-          "Random male profiles retrieved successfully"
-        )
-      );
+    const sentLikes = user.sent_likes_id || [];
+    const pendingLikes = user.pending_likes_id || [];
+
+    // Aggregate to fetch random profiles
+    const randomProfiles = await Dating.aggregate([
+      {
+        $match: {
+          userId: { $nin: sentLikes }, // Exclude profiles the user has already liked
+          _id: { $ne: user._id }, // Exclude the current user's own profile
+          pending_likes_id: { $nin: [userId] }, // Exclude profiles where the user's ID is in their pending_likes_id
+          looking_for: "male", // Ensure the profile is looking for males
+        },
+      },
+      { $sample: { size: 5 } }, // Randomly pick 5 profiles
+    ]);
+
+    return res.status(200).json({
+      statusCode: 200,
+      data: randomProfiles,
+      message: "Random male profiles retrieved successfully",
+      success: true,
+      errors: null,
+    });
   } catch (error) {
-    return res
-      .status(500)
-      .json(new ApiResponse(500, null, "An unexpected error occurred"));
+    return res.status(500).json({
+      statusCode: 500,
+      data: null,
+      message: error.message || "An error occurred",
+      success: false,
+      errors: error,
+    });
   }
 });
 
-// Get Random Female Profile
+// Get Random Female Profiles
 export const getRandomFemaleProfiles = asyncHandler(async (req, res) => {
   try {
-    // Get random profiles where 'looking_for' is 'female'
+    const { userId } = req.params; // Assuming userId is available in req.user
+
+    // Retrieve the user’s liked profiles
+    const user = await Dating.findOne({ userId });
+
+    if (!user) {
+      return res.status(404).json(new ApiResponse(404, null, "User not found"));
+    }
+
+    // Get random female profiles excluding already liked profiles
     const randomFemaleProfiles = await Dating.aggregate([
-      { $match: { looking_for: "female" } },
+      {
+        $match: {
+          _id: { $nin: user.sent_likes_id }, // Exclude profiles already liked
+          looking_for: "female",
+        },
+      },
       { $sample: { size: 5 } }, // Randomly pick up to 5 profiles
     ]);
 

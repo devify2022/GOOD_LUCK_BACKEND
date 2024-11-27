@@ -2,6 +2,7 @@ import { User } from "../../models/auth/user.model.js";
 import { Matrimony } from "../../models/matrimony/matrimony.model.js";
 import { ApiResponse } from "../../utils/apiResponse.js";
 import { asyncHandler } from "../../utils/asyncHandler.js";
+import { mongoose } from "mongoose";
 
 // Create Matrimony Profile
 export const createMatrimonyProfile = asyncHandler(async (req, res) => {
@@ -16,6 +17,7 @@ export const createMatrimonyProfile = asyncHandler(async (req, res) => {
     gender,
     salary,
     age,
+    subscribed,
     subs_plan_name,
     subs_start_date,
     bio,
@@ -56,6 +58,7 @@ export const createMatrimonyProfile = asyncHandler(async (req, res) => {
         salary,
         age,
         gender,
+        subscribed,
         subs_plan_name,
         subs_start_date,
         bio,
@@ -192,50 +195,131 @@ export const updateMatrimonyProfileByUserId = asyncHandler(async (req, res) => {
 
 // Get 5 Random Groom Profiles
 export const getRandomGrooms = asyncHandler(async (req, res) => {
-  const grooms = await Matrimony.aggregate([
-    { $match: { searching_for: "groom" } },
-    { $sample: { size: 5 } },
-  ]);
+  const { userId } = req.params;
 
-  if (!grooms.length) {
+  try {
+    // Find the requesting user's profile
+    const userProfile = await Matrimony.findOne({ userId });
+
+    if (!userProfile) {
+      return res
+        .status(404)
+        .json(new ApiResponse(404, null, "User profile not found"));
+    }
+
+    // Get the list of liked profiles
+    const likedProfiles = userProfile.sent_likes_id || [];
+
+    // Fetch 5 random groom profiles excluding liked profiles
+    const randomGrooms = await Matrimony.aggregate([
+      {
+        $match: {
+          searching_for: "groom",
+          _id: {
+            $nin: likedProfiles.map((id) => new mongoose.Types.ObjectId(id)), // Ensure proper ObjectId conversion
+          },
+        },
+      },
+      { $sample: { size: 5 } },
+      {
+        $project: {
+          userId: 1,
+          Fname: 1,
+          Lname: 1,
+          photo: 1,
+          city: 1,
+          state: 1,
+          salary: 1,
+          age: 1,
+          bio: 1,
+          gender: 1,
+          isDivorce: 1,
+          cast: 1,
+          interests: 1,
+          searching_for: 1,
+          facebookLink: 1,
+          whatsappNumber: 1,
+        },
+      },
+    ]);
+
+    if (!randomGrooms.length) {
+      return res
+        .status(404)
+        .json(new ApiResponse(404, null, "No random grooms found"));
+    }
+
     return res
-      .status(404)
-      .json(new ApiResponse(404, null, "No groom profiles found"));
+      .status(200)
+      .json(new ApiResponse(200, randomGrooms, "Random grooms fetched successfully"));
+  } catch (error) {
+    console.error("Error Fetching Grooms:", error.message);
+    return res
+      .status(500)
+      .json(new ApiResponse(500, null, "An error occurred while fetching grooms"));
   }
-
-  return res
-    .status(200)
-    .json(
-      new ApiResponse(
-        200,
-        grooms,
-        "Random groom profiles retrieved successfully"
-      )
-    );
 });
+
 
 // Get 5 Random Bride Profiles
 export const getRandomBrides = asyncHandler(async (req, res) => {
-  const brides = await Matrimony.aggregate([
-    { $match: { searching_for: "bride" } },
-    { $sample: { size: 5 } },
-  ]);
+  const { userId } = req.params;
 
-  if (!brides.length) {
+  // Find the requesting user's profile
+  const userProfile = await Matrimony.findOne({ userId });
+
+  if (!userProfile) {
     return res
       .status(404)
-      .json(new ApiResponse(404, null, "No bride profiles found"));
+      .json(new ApiResponse(404, null, "User profile not found"));
   }
 
-  return res
-    .status(200)
-    .json(
-      new ApiResponse(
-        200,
-        brides,
-        "Random bride profiles retrieved successfully"
-      )
-    );
+  try {
+    // Get the IDs of profiles the user has liked
+    const likedProfileIds = await Matrimony.find({
+      userId: { $in: userProfile.sent_likes_id || [] },
+    }).select("_id");
+
+    const likedIdsArray = likedProfileIds.map((profile) => profile._id);
+
+    // Fetch 5 random bride profiles excluding the ones the user has liked
+    const randomBrides = await Matrimony.aggregate([
+      { $match: { searching_for: "bride", _id: { $nin: likedIdsArray } } },
+      { $sample: { size: 5 } },
+      {
+        $project: {
+          userId: 1,
+          Fname: 1,
+          Lname: 1,
+          photo: 1,
+          city: 1,
+          state: 1,
+          salary: 1,
+          age: 1,
+          bio: 1,
+          gender: 1,
+          isDivorce: 1,
+          cast: 1,
+          interests: 1,
+          searching_for: 1,
+          facebookLink: 1,
+          whatsappNumber: 1,
+        },
+      },
+    ]);
+
+    return res
+      .status(200)
+      .json(
+        new ApiResponse(200, randomBrides, "Random brides fetched successfully")
+      );
+  } catch (error) {
+    return res
+      .status(500)
+      .json(
+        new ApiResponse(500, null, "An error occurred while fetching brides")
+      );
+  }
 });
 
 // Send Like to a Matrimony Profile with senderId and receiverId from params

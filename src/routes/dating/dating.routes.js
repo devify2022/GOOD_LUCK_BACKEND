@@ -17,8 +17,8 @@ const router = Router();
 
 router.route("/createDatingProfile/:id").post(createDatingProfile);
 router.route("/").get(getAllDatingProfiles);
-router.route("/male").get(getRandomMaleProfiles);
-router.route("/female").get(getRandomFemaleProfiles);
+router.route("/male/:userId").get(getRandomMaleProfiles);
+router.route("/female/:userId").get(getRandomFemaleProfiles);
 router.route("/:id").get(getDatingProfileByUserId);
 router.route("/update/:id").patch(updateDatingProfileByUserId);
 router.post("/send_like/:senderId/:receiverId", sendLikeDating);

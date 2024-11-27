@@ -16,8 +16,8 @@ const router = Router();
 
 router.route("/createMatrimonyProfile/:id").post(createMatrimonyProfile);
 router.route("/").get(getAllMatrimonyProfile);
-router.route("/brides").get(getRandomBrides);
-router.route("/grooms").get(getRandomGrooms);
+router.route("/brides/:userId").get(getRandomBrides);
+router.route("/grooms/:userId").get(getRandomGrooms);
 router.route("/:id").get(getMatrimonyProfileByUserId);
 router.route("/update/:id").patch(updateMatrimonyProfileByUserId);
 router.post("/send_like/:senderId/:receiverId", sendLikeMatrimony);
