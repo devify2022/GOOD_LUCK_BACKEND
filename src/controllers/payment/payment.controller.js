@@ -10,33 +10,31 @@ const SALT_KEY = "96434309-7796-489d-8924-ab56988a6076";
 // const APP_BE_URL = "http://localhost:8000";
 
 // Function to generate a unique transaction ID
-// function generatedTranscId() {
-//   return "T" + Date.now();
-// }
+function generatedTranscId() {
+  return "T" + Date.now();
+}
 
 // endpoint to initiate a payment
 export const createPayment = async function (req, res, next) {
-  // console.log("bosikoron");
-
-  const { userId, amount, mobileNumber, merchantTransactionId } = req.body;
+  const { userId, amount, mobileNumber } = req.body;
 
   try {
     const payEndPoint = "/pg/v1/pay";
-    // const merchantUserId = generatedTranscId();
+    const merchantUserId = generatedTranscId();
     // const useId = "user123";
     const normalPayLoad = {
       merchantId: MERCHANT_ID,
-      merchantTransactionId: merchantTransactionId, // need
+      merchantTransactionId: merchantUserId, // need
       merchantUserId: userId, //need
       amount: amount, // need
-      redirectUrl: `http://localhost:8000/redirect-url/${merchantTransactionId}`,
+      redirectUrl: `http://localhost:8000/redirect-url/${merchantUserId}`,
       redirectMode: "REDIRECT",
       mobileNumber: mobileNumber, //need
       paymentInstrument: {
         type: "PAY_PAGE",
       },
     };
-    console.log({ normalPayLoad });
+    // console.log({ normalPayLoad });
 
     let bufferObj = Buffer.from(JSON.stringify(normalPayLoad), "utf8");
     let base64EncodedPayload = bufferObj.toString("base64"); // need
