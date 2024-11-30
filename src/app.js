@@ -14,7 +14,7 @@ setupSocketIO(server); // Use the same server for Socket.IO
 
 app.use(
   cors({
-    origin: "http://localhost:8081", // Specify allowed origin
+    origin: ["http://localhost:3000", "http://localhost:8081"], // Specify allowed origin
     credentials: true, // Allow credentials (cookies, etc.)
   })
 );
@@ -34,6 +34,7 @@ import productCategoryRoutes from "./routes/product/productcategory.routes.js";
 import productRoutes from "./routes/product/product.routes.js";
 import orderRoutes from "./routes/product/order.routes.js";
 import paymentRouter from "./routes/payment/payment.routes.js";
+import razorpayRouter from "./routes/payment/razorpay.routes.js";
 
 // Use routes
 app.use("/good_luck/api/v1/auth", userRoutes);
@@ -46,6 +47,7 @@ app.use("/good_luck/api/v1/productCategory", productCategoryRoutes);
 app.use("/good_luck/api/v1/product", productRoutes);
 app.use("/good_luck/api/v1/order", orderRoutes);
 app.use("/", paymentRouter);
+app.use("/", razorpayRouter);
 
 app.get("/", (req, res) => {
   res.send("Welcome to Good Luck API!");

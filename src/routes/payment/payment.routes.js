@@ -6,7 +6,7 @@ import {
 
 const router = Router();
 
-router.post("/pay", createPayment);
+router.get("/pay", createPayment);
 router.get("/redirect-url/:merchantTransactionId", checkStatus);
 
 export default router;

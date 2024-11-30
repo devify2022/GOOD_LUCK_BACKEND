@@ -25,11 +25,11 @@ export const createPayment = async function (req, res, next) {
     const normalPayLoad = {
       merchantId: MERCHANT_ID,
       merchantTransactionId: merchantUserId, // need
-      merchantUserId: userId, //need
-      amount: amount, // need
+      merchantUserId: userId || "user123", //need
+      amount: amount || 500, // need
       redirectUrl: `http://localhost:8000/redirect-url/${merchantUserId}`,
       redirectMode: "REDIRECT",
-      mobileNumber: mobileNumber, //need
+      mobileNumber: mobileNumber || "9733524164", //need
       paymentInstrument: {
         type: "PAY_PAGE",
       },
