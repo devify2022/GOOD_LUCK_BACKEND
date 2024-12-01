@@ -251,15 +251,18 @@ export const getRandomGrooms = asyncHandler(async (req, res) => {
 
     return res
       .status(200)
-      .json(new ApiResponse(200, randomGrooms, "Random grooms fetched successfully"));
+      .json(
+        new ApiResponse(200, randomGrooms, "Random grooms fetched successfully")
+      );
   } catch (error) {
     console.error("Error Fetching Grooms:", error.message);
     return res
       .status(500)
-      .json(new ApiResponse(500, null, "An error occurred while fetching grooms"));
+      .json(
+        new ApiResponse(500, null, "An error occurred while fetching grooms")
+      );
   }
 });
-
 
 // Get 5 Random Bride Profiles
 export const getRandomBrides = asyncHandler(async (req, res) => {
@@ -403,7 +406,7 @@ export const getPendingLikesProfilesMatrimony = asyncHandler(
     const pendingLikeProfiles = await Matrimony.find({
       userId: { $in: filteredPendingLikes },
     }).select(
-      "Fname Lname photo city state age gender bio cast salary interests isDivorce"
+      "Fname Lname photo city state age gender bio cast salary interests isDivorce userId"
     );
 
     return res
@@ -445,7 +448,7 @@ export const getSentLikesProfilesMatrimony = asyncHandler(async (req, res) => {
   const sentLikeProfiles = await Matrimony.find({
     userId: { $in: sentLikes },
   }).select(
-    "Fname Lname photo city state age gender bio cast salary interests isDivorce"
+    "Fname Lname photo city state age gender bio cast salary interests isDivorce userId"
   );
 
   // If no profiles are found for sent likes, return null with a relevant message

@@ -7,7 +7,7 @@ import { MatchedProfileDating } from "./models/dating/matchedProfileDating.model
 export const setupSocketIO = (server) => {
   const io = new Server(server, {
     cors: {
-      origin: ["http://localhost:3000", "http://localhost:8081"], // Allow requests from this origin
+      origin: "http://192.168.29.9:8081", // Allow requests from this origin
       methods: ["GET", "POST"], // Allow these methods
       credentials: true, // Allow credentials (cookies, etc.)
     },

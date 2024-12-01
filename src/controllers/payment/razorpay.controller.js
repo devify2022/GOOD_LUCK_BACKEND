@@ -9,8 +9,8 @@ export const createOrders = asyncHandler(async (req, res, next) => {
 
     // Initialize Razorpay instance
     const razorpay = new Razorpay({
-      key_id: process.env.RAZORPAY_KEY_ID, // Razorpay Key ID from environment variable
-      key_secret: process.env.RAZORPAY_KEY_SECRET, // Razorpay Key Secret from environment variable
+      key_id: process.env.RAZORPAY_KEY_ID || "rzp_test_IMABhjdnYqoapk", // Razorpay Key ID from environment variable
+      key_secret: process.env.RAZORPAY_KEY_SECRET || "1mXEEBf09BQ21nb2YPuLiiB2", // Razorpay Key Secret from environment variable
     });
 
     // Create the order
