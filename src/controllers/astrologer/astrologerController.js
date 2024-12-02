@@ -23,6 +23,7 @@ export const createAstrologer = asyncHandler(async (req, res) => {
       certifications,
     } = req.body;
 
+    // Validate required fields
     if (
       !phone ||
       !specialisation ||
@@ -34,9 +35,14 @@ export const createAstrologer = asyncHandler(async (req, res) => {
       !language ||
       !certifications
     ) {
-      throw new ApiError(400, "All required fields must be provided");
+      return res
+        .status(400)
+        .json(
+          new ApiResponse(400, null, "All required fields must be provided")
+        );
     }
 
+    const existsAuth = await Auth.findOne({ phone });
     const existsUser = await User.findOne({ phone });
     const existsAstrologer = await Astrologer.findOne({ phone });
 
@@ -44,7 +50,8 @@ export const createAstrologer = asyncHandler(async (req, res) => {
       if (existsUser.isAstrologer) {
         if (!existsAstrologer) {
           const astrologer = new Astrologer({
-            userId: existsAstrologer._id,
+            authId: existsAuth ? existsAuth._id : null,
+            userId: existsUser._id,
             Fname: existsUser.Fname,
             Lname: existsUser.Lname,
             phone: existsUser.phone,
@@ -74,19 +81,35 @@ export const createAstrologer = asyncHandler(async (req, res) => {
               )
             );
         } else {
-          throw new ApiError(400, "User is already an astrologer");
+          return res
+            .status(400)
+            .json(new ApiResponse(400, null, "User is already an astrologer"));
         }
       } else {
-        throw new ApiError(
-          400,
-          "Phone number is already used by a normal user"
-        );
+        return res
+          .status(400)
+          .json(
+            new ApiResponse(
+              400,
+              null,
+              "Phone number is already used by a normal user"
+            )
+          );
       }
     } else {
-      throw new ApiError(404, "User not found");
+      return res.status(404).json(new ApiResponse(404, null, "User not found"));
     }
   } catch (error) {
-    throw error;
+    // Handle unexpected errors
+    if (error.name === "ValidationError") {
+      // Mongoose validation error
+      return res
+        .status(400)
+        .json(new ApiResponse(400, null, "Validation error", error.errors));
+    }
+    return res
+      .status(500)
+      .json(new ApiResponse(500, null, "Internal Server Error", error.message));
   }
 });
 
@@ -247,7 +270,7 @@ export const verifyAstrologerProfileUpdateOTP = asyncHandler(
     }
 
     const authRecord = await Auth.findByIdAndUpdate(
-      id, 
+      id,
       {
         Fname: updateRequest.Fname,
         Lname: updateRequest.Lname,
@@ -263,7 +286,7 @@ export const verifyAstrologerProfileUpdateOTP = asyncHandler(
 
     // Update User record
     const userRecord = await User.findOneAndUpdate(
-      { userId: id }, 
+      { userId: id },
       {
         Fname: updateRequest.Fname,
         Lname: updateRequest.Lname,
