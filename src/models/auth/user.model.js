@@ -6,6 +6,10 @@ const usersSchema = new Schema(
       type: Schema.Types.ObjectId,
       ref: "Auth",
     },
+    socketId: {
+      type: String,
+      default: null,
+    },
     Fname: {
       type: String,
       // required: [true, "First name is required"],

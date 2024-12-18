@@ -9,6 +9,7 @@ import { AuthRequest } from "../../models/auth/authRequest.model.js";
 import checkRateLimit from "./../../utils/checkRateLimit.js";
 import { Matrimony } from "../../models/matrimony/matrimony.model.js";
 import { Dating } from "../../models/dating/dating.model.js";
+import { Admin } from "../../models/admin/admin.model.js";
 
 // Helper to generate access and refresh tokens
 const generateAccessAndRefreshToken = async (authId) => {
@@ -133,6 +134,15 @@ const auth_request_verify_OTP = asyncHandler(async (req, res) => {
     isAdmin: authRequestRecord.isAdmin,
   });
   await newUser.save();
+
+  // Create an Admin record if isAdmin is true
+  if (authRequestRecord.isAdmin) {
+    const newAdmin = new Admin({
+      authId: newAuth._id,
+      userId: newUser._id,
+    });
+    await newAdmin.save();
+  }
 
   const { accessToken, refreshToken } = await generateAccessAndRefreshToken(
     newAuth._id

@@ -7,6 +7,10 @@ const astrologerSchema = new Schema(
       ref: "Auth",
       required: true,
     },
+    socketId: {
+      type: String,
+      default: null,
+    },
     Fname: {
       type: String,
     },

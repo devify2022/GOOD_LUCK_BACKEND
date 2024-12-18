@@ -13,7 +13,6 @@ const datingSchema = new Schema(
       required: true,
     },
     socketId: {
-      // Add socketId field
       type: String,
       default: null,
     },
