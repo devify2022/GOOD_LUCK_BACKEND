@@ -5,8 +5,12 @@ import mongoose from "mongoose";
 import { MatchedProfileDating } from "./models/dating/matchedProfileDating.model.js";
 import { User } from "./models/auth/user.model.js";
 import { Astrologer } from "./models/astrologer/astroler.model.js";
-import { ChatRequest } from "./models/chatRequest/chatRequest.model.js";
-import { endChat, startChat } from "./utils/chatBilling.js";
+import {
+  handleChatMessage,
+  handleChatRequest,
+  handleChatResponse,
+  handleEndChat,
+} from "./controllers/chatController/astrologerWithUser/controller.js";
 
 export const setupSocketIO = (server) => {
   const io = new Server(server, {
@@ -94,6 +98,7 @@ export const setupSocketIO = (server) => {
       }
     });
 
+    //================================= DATING CHAT PART====================================
     // Handle sending messages
     socket.on("send_message", async (messageData) => {
       const { senderId, matchId, message } = messageData;
@@ -178,129 +183,32 @@ export const setupSocketIO = (server) => {
 
     //================================= ASTROLOGER CHAT PART====================================
     // Handle chat request from user
-    socket.on("chat-request", async (data) => {
-      try {
-        const { userId, astrologerId, chatType } = data;
-
-        // Retrieve the astrologer's details to get the socket ID
-        const astrologer = await Astrologer.findById(astrologerId);
-
-        if (!astrologer) {
-          return socket.emit("error", { message: "Astrologer not found." });
-        }
-
-        if (!astrologer.socketId) {
-          return socket.emit("error", { message: "Astrologer is not online." });
-        }
-
-        // Save the chat request in the database
-        const chatRequest = new ChatRequest({ userId, astrologerId, chatType });
-        await chatRequest.save();
-
-        // Notify the astrologer about the incoming chat request using their socket ID
-        io.to(astrologer.socketId).emit("chat-request", {
-          requestId: chatRequest._id,
-          userId,
-          chatType,
-        });
-
-        console.log(
-          `Chat request sent to astrologer: ${astrologerId}, Socket ID: ${astrologer.socketId}`
-        );
-      } catch (error) {
-        console.error("Error handling chat request:", error);
-        socket.emit("error", { message: "Error processing chat request." });
-      }
+    socket.on("chat-request", (data) => {
+      // Call the function to handle the chat request
+      handleChatRequest(io, data, socket);
     });
 
     // Handle astrologer's response
-    socket.on("chat-response", async (data) => {
-      try {
-        const { requestId, response } = data;
-
-        // Update chat request status in the database
-        const chatRequest = await ChatRequest.findById(requestId);
-        if (!chatRequest) {
-          socket.emit("error", { message: "Chat request not found" });
-          return;
-        }
-
-        chatRequest.status = response;
-        await chatRequest.save();
-
-        if (response === "accepted") {
-          const roomId = `room_${chatRequest.userId}_${chatRequest.astrologerId}`;
-          chatRequest.roomId = roomId;
-          await chatRequest.save();
-
-          // Find the user and astrologer by their IDs to get the socketIds
-          const user = await User.findById(chatRequest.userId);
-          const astrologer = await Astrologer.findById(
-            chatRequest.astrologerId
-          );
-
-          if (!user || !astrologer) {
-            return socket.emit("error", {
-              message: "User or astrologer not found",
-            });
-          }
-
-          // Get the socket IDs from the user and astrologer
-          const userSocketId = user.socketId;
-          const astrologerSocketId = astrologer.socketId;
-
-          if (userSocketId) {
-            // Notify the user about chat acceptance
-            io.to(userSocketId).emit("chat-accepted", { roomId });
-          } else {
-            console.error("User is not online");
-          }
-
-          if (astrologerSocketId) {
-            // Notify the astrologer about chat acceptance
-            io.to(astrologerSocketId).emit("chat-accepted", { roomId });
-          } else {
-            console.error("Astrologer is not online");
-          }
-
-          // Start the chat billing process
-          startChat(
-            io,
-            roomId,
-            chatRequest.chatType,
-            chatRequest.userId,
-            chatRequest.astrologerId
-          );
-        } else {
-          // Find the user to get the socketId for rejection notification
-          const user = await User.findById(chatRequest.userId);
-
-          if (user && user.socketId) {
-            // Notify the user about the rejection
-            io.to(user.socketId).emit("chat-rejected");
-          } else {
-            console.error("User is not online or socket ID not found");
-          }
-        }
-      } catch (error) {
-        console.error("Error handling chat response:", error);
-      }
+    socket.on("chat-response", (data) => {
+      // Call the function to handle the chat response
+      handleChatResponse(io, data);
     });
 
     // Handle messages sent in the chat
-    socket.on("chat-message", (data) => {
-      const { roomId, message, senderId } = data;
+    socket.on("chat-message", async (data) => {
+      const result = await handleChatMessage(data, io);
 
-      // Broadcast the message to the chat room
-      io.to(roomId).emit("chat-message", { senderId, message });
+      if (result.error) {
+        socket.emit("error", result.error);
+      }
     });
 
     // Handle chat termination
-    socket.on("end-chat", (data) => {
+    socket.on("end-chat", async (data) => {
       const { roomId } = data;
 
-      // End the chat and stop the timer
-      endChat(io, roomId);
+      // Call the new function to handle the end of the chat
+      await handleEndChat(io, roomId);
     });
 
     // Handle user disconnection

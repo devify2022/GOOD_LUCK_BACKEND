@@ -1,4 +1,5 @@
 import mongoose, { Schema } from "mongoose";
+import walletSchema from "../wallet/wallet.model.js";
 
 const adminSchema = new Schema(
   {
@@ -12,9 +13,9 @@ const adminSchema = new Schema(
       ref: "User",
       required: true,
     },
-    created_by: {
-      type: Schema.Types.ObjectId, // Admin who created this admin (if applicable)
-      ref: "Admin",
+    wallet: {
+      type: walletSchema, // Use the wallet schema here
+      default: () => ({ balance: 0, transactionHistory: [] }), // Default structure for the wallet
     },
   },
   { timestamps: true }

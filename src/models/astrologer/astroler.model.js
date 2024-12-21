@@ -1,8 +1,14 @@
 import mongoose, { Schema } from "mongoose";
+import walletSchema from "../wallet/wallet.model.js";
 
 const astrologerSchema = new Schema(
   {
     userId: {
+      type: Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
+    },
+    authId: {
       type: Schema.Types.ObjectId,
       ref: "Auth",
       required: true,
@@ -42,6 +48,15 @@ const astrologerSchema = new Schema(
     total_earning: {
       type: Number,
       default: 0,
+    },
+    wallet: {
+      type: walletSchema,
+      default: () => ({ balance: 0, transactionHistory: [] }),
+    },
+    status: {
+      type: String,
+      enum: ["available", "busy", "offline"],
+      default: "available",
     },
     chat_price: {
       type: Number,

@@ -1,4 +1,5 @@
 import mongoose, { Schema } from "mongoose";
+import walletSchema from "../wallet/wallet.model.js";
 
 const usersSchema = new Schema(
   {
@@ -47,6 +48,10 @@ const usersSchema = new Schema(
       },
     },
     services: [String],
+    wallet: {
+      type: walletSchema, // Use the wallet schema here
+      default: () => ({ balance: 0, transactionHistory: [] }), // Default structure for the wallet
+    },
     isVerified: {
       type: Boolean,
       default: false,
