@@ -2,7 +2,7 @@ import { Astrologer } from "../../../models/astrologer/astroler.model.js";
 import { User } from "../../../models/auth/user.model.js";
 import { ChatRequest } from "../../../models/chatRequest/chatRequest.model.js";
 import { AstrologerChat } from "../../../models/chatWithAstrologer/astrologerChat.model.js";
-import { endChat, startChat } from "./chatBilling.js";
+import { endChat, getChatPrice, startChat } from "./chatBilling.js";
 
 // Function to handle chat requests
 export async function handleChatRequest(io, data, socket) {
@@ -11,11 +11,11 @@ export async function handleChatRequest(io, data, socket) {
 
     // Retrieve the astrologer's details to get the socket ID and status
     const astrologer = await Astrologer.findById(astrologerId);
-
     if (!astrologer) {
       return socket.emit("error", { message: "Astrologer not found." });
     }
 
+    // Check if the astrologer is busy or offline
     if (astrologer.status === "busy") {
       return socket.emit("error", {
         message: "Astrologer is currently busy.",
@@ -24,6 +24,20 @@ export async function handleChatRequest(io, data, socket) {
 
     if (!astrologer.socketId) {
       return socket.emit("error", { message: "Astrologer is not online." });
+    }
+
+    // Retrieve the user's wallet details to check balance
+    const user = await User.findById(userId);
+    if (!user) {
+      return socket.emit("error", { message: "User not found." });
+    }
+
+    // Get the chat price for the requested chat type
+    const costPerMinute = await getChatPrice(chatType, astrologerId);
+
+    // Check if the user has sufficient funds
+    if (user.wallet.balance < costPerMinute) {
+      return io.to(user.socketId).emit("chat-error", { message: "Insufficient funds." });
     }
 
     // Save the chat request in the database
@@ -45,6 +59,7 @@ export async function handleChatRequest(io, data, socket) {
     socket.emit("error", { message: "Error processing chat request." });
   }
 }
+
 
 // Function to handle astrologer's response to a chat request
 export async function handleChatResponse(io, data) {
@@ -78,9 +93,7 @@ export async function handleChatResponse(io, data) {
       );
 
       if (!user || !astrologerUser) {
-        return io.emit("error", {
-          message: "User or astrologer not found",
-        });
+        return io.emit("error", { message: "User or astrologer not found" });
       }
 
       // Get the socket IDs from the user and astrologer
@@ -110,9 +123,8 @@ export async function handleChatResponse(io, data) {
         chatRequest.astrologerId
       );
     } else {
-      // Find the user to get the socketId for rejection notification
+      // Handle rejection logic
       const user = await User.findById(chatRequest.userId);
-
       if (user && user.socketId) {
         // Notify the user about the rejection
         io.to(user.socketId).emit("chat-rejected");
@@ -154,13 +166,14 @@ export const handleChatMessage = async (data, io) => {
     await chat.save();
 
     // Broadcast the message to the chat room
-    io.to(roomId).emit("chat-message", {
+    io.to(roomId).emit("received-message", {
       senderId,
       senderModel,
       message,
       timestamp: newMessage.timestamp,
       duration,
     });
+    console.log("Message broadcasted to room:", roomId);
 
     return { success: true, timestamp: newMessage.timestamp };
   } catch (error) {
@@ -170,10 +183,10 @@ export const handleChatMessage = async (data, io) => {
 };
 
 // Function to handle the end of the chat and update the astrologer's status
-export async function handleEndChat(io, roomId) {
+export async function handleEndChat(io, roomId, sender) {
   try {
-    // End the chat and stop the timer
-    endChat(io, roomId);
+    // End the chat and stop the timer, passing the sender information to determine the reason
+    endChat(io, roomId, sender);
 
     // Find the chat request based on the roomId
     const chatRequest = await ChatRequest.findOne({ roomId });

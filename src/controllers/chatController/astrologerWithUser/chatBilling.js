@@ -5,18 +5,16 @@ import { User } from "../../../models/auth/user.model.js";
 // Global intervals object to keep track of active intervals
 const intervals = {};
 
-// Start chat billing
+// Start chat billing and timer
 export async function startChat(io, roomId, chatType, userId, astrologerId) {
   try {
     const astrologer = await Astrologer.findById(astrologerId);
-
     if (!astrologer) {
       io.to(roomId).emit("chat-error", { message: "Astrologer not found" });
       return;
     }
 
     const costPerMinute = await getChatPrice(chatType, astrologerId);
-
     const user = await User.findById(userId);
     const admin = await Admin.findOne(); // Assuming a single admin for simplicity
 
@@ -25,16 +23,20 @@ export async function startChat(io, roomId, chatType, userId, astrologerId) {
       return;
     }
 
+    let totalTime = 0; // Total time in minutes
     const interval = setInterval(async () => {
-      // Fetch wallet balances
+      // Check if the user has enough balance for the next minute
       const userWallet = user.wallet;
-      const astrologerWallet = astrologer.wallet;
-      const adminWallet = admin.wallet;
-
       if (userWallet.balance < costPerMinute) {
+        io.to(roomId).emit("chat-error", { message: "Insufficient funds" });
         io.to(roomId).emit("chat-end", { reason: "Insufficient funds" });
+
+        // Set astrologer's status to 'available' if chat ends due to insufficient funds
+        astrologer.status = 'available';  // Assuming 'status' is a field that tracks availability
+        await astrologer.save();
+
         clearInterval(interval);
-        delete intervals[roomId];
+        delete intervals[roomId]; // Clean up the interval
         return;
       }
 
@@ -56,6 +58,7 @@ export async function startChat(io, roomId, chatType, userId, astrologerId) {
 
       // Credit to astrologer
       astrologer.wallet.balance += astrologerShare;
+      astrologer.total_earning += astrologerShare;
       const astrologerTransaction = {
         timestamp: new Date(),
         type: "credit",
@@ -79,7 +82,14 @@ export async function startChat(io, roomId, chatType, userId, astrologerId) {
       await admin.save();
 
       // Emit updates to the room
-      io.to(roomId).emit("chat-timer", { roomId, cost: costPerMinute });
+      io.to(roomId).emit("chat-timer", {
+        roomId,
+        cost: costPerMinute,
+        elapsedTime: totalTime,
+      });
+
+      // Increase total time by 1 minute
+      totalTime++;
     }, 60000); // 1-minute interval
 
     intervals[roomId] = interval; // Track the interval
@@ -91,19 +101,23 @@ export async function startChat(io, roomId, chatType, userId, astrologerId) {
   }
 }
 
+
 // End chat billing
-export function endChat(io, roomId) {
+export function endChat(io, roomId, sender) {
   if (intervals[roomId]) {
     clearInterval(intervals[roomId]); // Stop the timer
     delete intervals[roomId];
   }
+
+  // Emit a notification to both user and astrologer
   io.to(roomId).emit("chat-end", {
-    reason: "Chat ended by user or astrologer",
+    reason:
+      sender === "user" ? "Chat ended by user" : "Chat ended by astrologer",
   });
 }
 
 // Utility function to get chat price
-async function getChatPrice(chatType, astrologerId) {
+export async function getChatPrice(chatType, astrologerId) {
   try {
     const astrologer = await Astrologer.findById(astrologerId);
 
@@ -113,11 +127,11 @@ async function getChatPrice(chatType, astrologerId) {
 
     // Determine the price based on chat type
     switch (chatType) {
-      case "chat":
+      case "text":
         return astrologer.chat_price;
       case "video":
         return astrologer.video_price;
-      case "call":
+      case "audio":
         return astrologer.call_price;
       default:
         throw new Error("Invalid chat type");

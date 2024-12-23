@@ -15,7 +15,7 @@ import {
 export const setupSocketIO = (server) => {
   const io = new Server(server, {
     cors: {
-      origin: "http://192.168.29.9:8081", // Allow requests from this origin
+      origin: ["http://192.168.29.9:8081", "http://localhost:3000"], // Allow requests from this origin
       methods: ["GET", "POST"], // Allow these methods
       credentials: true, // Allow credentials (cookies, etc.)
     },
@@ -194,8 +194,15 @@ export const setupSocketIO = (server) => {
       handleChatResponse(io, data);
     });
 
+    // Handle join room User and Astrologer
+    socket.on("join-room", (roomId) => {
+      console.log(`Socket ${socket.id} joined room: ${roomId}`);
+      socket.join(roomId);
+    });
+
     // Handle messages sent in the chat
-    socket.on("chat-message", async (data) => {
+    socket.on("send-message", async (data) => {
+      console.log("Received message:", data);
       const result = await handleChatMessage(data, io);
 
       if (result.error) {
@@ -205,10 +212,10 @@ export const setupSocketIO = (server) => {
 
     // Handle chat termination
     socket.on("end-chat", async (data) => {
-      const { roomId } = data;
+      const { roomId, sender } = data; // Extract sender from the data
 
-      // Call the new function to handle the end of the chat
-      await handleEndChat(io, roomId);
+      // Call the function to handle the end of the chat, passing the sender
+      await handleEndChat(io, roomId, sender);
     });
 
     // Handle user disconnection

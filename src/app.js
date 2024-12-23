@@ -14,7 +14,7 @@ setupSocketIO(server); // Use the same server for Socket.IO
 
 app.use(
   cors({
-    origin: "http://192.168.29.9:8081", // Specify allowed origin
+    origin: ["http://192.168.29.9:8081", "http://localhost:3000"], // Specify allowed origin
     credentials: true, // Allow credentials (cookies, etc.)
   })
 );
