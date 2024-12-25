@@ -1,106 +1,162 @@
 import { Admin } from "../../../models/admin/admin.model.js";
 import { Astrologer } from "../../../models/astrologer/astroler.model.js";
 import { User } from "../../../models/auth/user.model.js";
+import { generateTransactionId } from "../../../utils/generateTNX.js";
 
 // Global intervals object to keep track of active intervals
 const intervals = {};
 
-// Start chat billing and timer
+async function deductUserWallet(
+  user,
+  costPerMinute,
+  roomId,
+  chatType,
+  astrologerId
+) {
+  if (user.wallet.balance < costPerMinute) {
+    return { success: false, message: "Insufficient funds" };
+  }
+
+  // Generate a transaction ID
+  const transactionId = generateTransactionId();
+
+  user.wallet.balance -= costPerMinute;
+  const transaction = {
+    timestamp: new Date(),
+    type: "debit",
+    amount: costPerMinute,
+    description: `Chat session (${chatType}) with Astrologer ID: ${astrologerId}`,
+    reference: `ChatRoom-${roomId}`,
+    transactionId: transactionId,
+  };
+  user.wallet.transactionHistory.push(transaction);
+  await user.save();
+
+  return { success: true };
+}
+
+// Function to update astrologer and admin wallets
+async function creditAstrologerAndAdmin(astrologer, admin, totalCost, roomId) {
+  const transactionId = generateTransactionId();
+
+  const astrologerShare = (60 / 100) * totalCost;
+  const adminShare = (40 / 100) * totalCost;
+
+  astrologer.wallet.balance += astrologerShare;
+  astrologer.total_earning += astrologerShare;
+  astrologer.wallet.transactionHistory.push({
+    timestamp: new Date(),
+    type: "credit",
+    amount: astrologerShare,
+    description: "Chat earnings",
+    reference: `ChatRoom-${roomId}`,
+    transactionId: transactionId
+  });
+  await astrologer.save();
+
+  admin.wallet.balance += adminShare;
+  admin.wallet.transactionHistory.push({
+    timestamp: new Date(),
+    type: "credit",
+    amount: adminShare,
+    description: "Chat commission",
+    reference: `ChatRoom-${roomId}`,
+  });
+  await admin.save();
+}
+
 export async function startChat(io, roomId, chatType, userId, astrologerId) {
   try {
     const astrologer = await Astrologer.findById(astrologerId);
-    if (!astrologer) {
-      io.to(roomId).emit("chat-error", { message: "Astrologer not found" });
+    const user = await User.findById(userId);
+    const admin = await Admin.findOne();
+
+    if (!astrologer || !user || !admin) {
+      io.to(roomId).emit("chat-error", {
+        message: "Astrologer, User, or Admin not found",
+      });
       return;
     }
 
     const costPerMinute = await getChatPrice(chatType, astrologerId);
-    const user = await User.findById(userId);
-    const admin = await Admin.findOne(); // Assuming a single admin for simplicity
 
-    if (!user || !admin) {
-      io.to(roomId).emit("chat-error", { message: "User or Admin not found" });
+    const firstDeduction = await deductUserWallet(
+      user,
+      costPerMinute,
+      roomId,
+      chatType,
+      astrologerId
+    );
+
+    if (!firstDeduction.success) {
+      io.to(roomId).emit("chat-error", {
+        message: firstDeduction.message,
+      });
+      io.to(roomId).emit("chat-end", { reason: firstDeduction.message });
+
+      astrologer.status = "available";
+      await astrologer.save();
       return;
     }
 
-    let totalTime = 0; // Total time in minutes
+    await creditAstrologerAndAdmin(astrologer, admin, costPerMinute, roomId);
+
+    let totalTime = 1;
+
     const interval = setInterval(async () => {
-      // Check if the user has enough balance for the next minute
-      const userWallet = user.wallet;
-      if (userWallet.balance < costPerMinute) {
-        io.to(roomId).emit("chat-error", { message: "Insufficient funds" });
-        io.to(roomId).emit("chat-end", { reason: "Insufficient funds" });
+      try {
+        const deductionResult = await deductUserWallet(
+          user,
+          costPerMinute,
+          roomId,
+          chatType,
+          astrologerId
+        );
 
-        // Set astrologer's status to 'available' if chat ends due to insufficient funds
-        astrologer.status = 'available';  // Assuming 'status' is a field that tracks availability
-        await astrologer.save();
+        if (!deductionResult.success) {
+          io.to(roomId).emit("chat-error", {
+            message: deductionResult.message,
+          });
+          io.to(roomId).emit("chat-end", { reason: deductionResult.message });
 
+          astrologer.status = "available";
+          await astrologer.save();
+          clearInterval(interval);
+          delete intervals[roomId];
+          return;
+        }
+
+        await creditAstrologerAndAdmin(
+          astrologer,
+          admin,
+          costPerMinute,
+          roomId
+        );
+
+        totalTime++;
+        io.to(roomId).emit("chat-timer", {
+          roomId,
+          cost: costPerMinute,
+          elapsedTime: totalTime,
+        });
+      } catch (error) {
+        console.error("Error during interval execution:", error);
+        io.to(roomId).emit("chat-error", {
+          message: "An error occurred during chat billing",
+        });
         clearInterval(interval);
-        delete intervals[roomId]; // Clean up the interval
-        return;
+        delete intervals[roomId];
       }
+    }, 60000);
 
-      // Deduct from user wallet
-      user.wallet.balance -= costPerMinute;
-      const userTransaction = {
-        timestamp: new Date(),
-        type: "debit",
-        amount: costPerMinute,
-        description: `Chat session (${chatType}) with Astrologer ID: ${astrologerId}`,
-        reference: `ChatRoom-${roomId}`,
-      };
-      user.wallet.transactionHistory.push(userTransaction);
-      await user.save();
-
-      // Calculate shares
-      const astrologerShare = (30 / 100) * costPerMinute;
-      const adminShare = (70 / 100) * costPerMinute;
-
-      // Credit to astrologer
-      astrologer.wallet.balance += astrologerShare;
-      astrologer.total_earning += astrologerShare;
-      const astrologerTransaction = {
-        timestamp: new Date(),
-        type: "credit",
-        amount: astrologerShare,
-        description: "Chat earnings",
-        reference: `ChatRoom-${roomId}`,
-      };
-      astrologer.wallet.transactionHistory.push(astrologerTransaction);
-      await astrologer.save();
-
-      // Credit to admin
-      admin.wallet.balance += adminShare;
-      const adminTransaction = {
-        timestamp: new Date(),
-        type: "credit",
-        amount: adminShare,
-        description: "Chat commission",
-        reference: `ChatRoom-${roomId}`,
-      };
-      admin.wallet.transactionHistory.push(adminTransaction);
-      await admin.save();
-
-      // Emit updates to the room
-      io.to(roomId).emit("chat-timer", {
-        roomId,
-        cost: costPerMinute,
-        elapsedTime: totalTime,
-      });
-
-      // Increase total time by 1 minute
-      totalTime++;
-    }, 60000); // 1-minute interval
-
-    intervals[roomId] = interval; // Track the interval
+    intervals[roomId] = interval;
   } catch (error) {
     console.error("Error in startChat:", error);
     io.to(roomId).emit("chat-error", {
-      message: "An error occurred during chat billing",
+      message: "An error occurred during chat initialization",
     });
   }
 }
-
 
 // End chat billing
 export function endChat(io, roomId, sender) {

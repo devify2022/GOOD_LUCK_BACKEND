@@ -1,3 +1,4 @@
+import { v4 as uuidv4 } from "uuid";
 import { ApiError } from "../../utils/apiError.js";
 import { ApiResponse } from "../../utils/apiResponse.js";
 import { asyncHandler } from "../../utils/asyncHandler.js";
@@ -320,6 +321,67 @@ export const verifyAstrologerProfileUpdateOTP = asyncHandler(
     );
   }
 );
+
+// Add balance to astrologer's wallet using userId
+export const addBalanceToAstrologerWallet = asyncHandler(async (req, res) => {
+  try {
+    const { id } = req.params; // Extract userId from URL params
+    const { amount, description, reference, transactionId } = req.body; // Extract details from request body
+
+    // Ensure the amount is positive
+    if (amount <= 0) {
+      return res
+        .status(400)
+        .json(new ApiResponse(400, null, "Amount must be greater than zero"));
+    }
+
+    // Find the astrologer by userId
+    const astrologer = await Astrologer.findById(id); // Use the userId in the URL params
+
+    if (!astrologer) {
+      return res
+        .status(404)
+        .json(new ApiResponse(404, null, "Astrologer not found"));
+    }
+
+    // Add balance to astrologer's wallet
+    astrologer.wallet.balance += amount;
+
+    // Create the transaction entry
+    const transaction = {
+      type: "credit", // Since we are adding balance, it's a credit transaction
+      amount,
+      description: description || "Balance added",
+      reference: reference || "N/A",
+      transactionId, // Include the generated transactionId here
+    };
+
+    // Add the transaction to the astrologer's transaction history
+    astrologer.wallet.transactionHistory.push(transaction);
+
+    // Save the updated astrologer document
+    await astrologer.save();
+
+    // Return the updated wallet balance
+    res
+      .status(200)
+      .json(
+        new ApiResponse(
+          200,
+          { balance: astrologer.wallet.balance },
+          "Balance added successfully"
+        )
+      );
+  } catch (error) {
+    console.error("Error adding balance:", error.message);
+    const statusCode = error.statusCode || 500;
+    const message =
+      error.message || "An error occurred while adding balance to wallet";
+    res
+      .status(statusCode)
+      .json(new ApiResponse(statusCode, null, message, error));
+  }
+});
 
 // Update Astrologer by ID
 export const updateAstrologerById = asyncHandler(async (req, res) => {

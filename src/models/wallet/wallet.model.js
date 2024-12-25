@@ -1,4 +1,6 @@
 import mongoose from "mongoose";
+import { v4 as uuidv4 } from "uuid";
+import { generateTransactionId } from "../../utils/generateTNX.js";
 
 const walletSchema = new mongoose.Schema({
   balance: { type: Number, default: 0 },
@@ -9,6 +11,7 @@ const walletSchema = new mongoose.Schema({
       amount: { type: Number, required: true },
       description: { type: String },
       reference: { type: String },
+      transactionId: { type: String, required: true, default: () => generateTransactionId() },
     },
   ],
 });

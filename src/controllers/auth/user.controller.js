@@ -10,6 +10,7 @@ import checkRateLimit from "./../../utils/checkRateLimit.js";
 import { Matrimony } from "../../models/matrimony/matrimony.model.js";
 import { Dating } from "../../models/dating/dating.model.js";
 import { Admin } from "../../models/admin/admin.model.js";
+import { generateTransactionId } from "../../utils/generateTNX.js";
 
 // Helper to generate access and refresh tokens
 const generateAccessAndRefreshToken = async (authId) => {
@@ -132,6 +133,17 @@ const auth_request_verify_OTP = asyncHandler(async (req, res) => {
     isAstrologer: authRequestRecord.isAstrologer,
     isAffiliate_marketer: authRequestRecord.isAffiliate_marketer,
     isAdmin: authRequestRecord.isAdmin,
+    wallet: {
+      transactionHistory: [
+        {
+          transactionId: generateTransactionId(),
+          timestamp: Date.now(),
+          type: "credit",
+          amount: 0,
+          description: "Initial wallet setup",
+        },
+      ],
+    },
   });
   await newUser.save();
 
@@ -359,6 +371,49 @@ const logoutUser = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, {}, "User logged out"));
 });
 
+// Add Balance to User Wallet
+const addWalletBalance = asyncHandler(async (req, res) => {
+  const { userId } = req.params;
+  const { amount, description, transactionId } = req.body;
+
+  // Check if the required fields are provided
+  if (!userId || !amount || amount <= 0) {
+    throw new ApiError(
+      400,
+      "User ID and amount are required and must be positive."
+    );
+  }
+
+  // Find the user by their ID
+  const user = await User.findById(userId);
+  if (!user) {
+    throw new ApiError(404, "User not found");
+  }
+
+  
+
+  // Add the balance and create the transaction history entry
+  user.wallet.balance += amount;
+  user.wallet.transactionHistory.push({
+    transactionId,
+    type: "credit",
+    amount,
+    description: description || "Balance added",
+    reference: userId,
+  });
+
+  // Save the updated user data
+  await user.save();
+
+  // Return the updated wallet information
+  return res.status(200).json({
+    success: true,
+    message: "Balance added successfully",
+    updatedBalance: user.wallet.balance,
+    transactionHistory: user.wallet.transactionHistory,
+  });
+});
+
 export {
   loginUser,
   login_verify_OTP,
@@ -367,4 +422,5 @@ export {
   logoutUser,
   refreshAccessToken,
   resendOTP,
+  addWalletBalance
 };

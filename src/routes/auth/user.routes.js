@@ -1,6 +1,7 @@
 import { Router } from "express";
 
 import {
+  addWalletBalance,
   auth_request_verify_OTP,
   authRequest,
   login_verify_OTP,
@@ -16,6 +17,7 @@ router.route("/authRequestVerifyotp").post(auth_request_verify_OTP);
 router.route("/login").post(loginUser);
 router.route("/loginVerifyotp").post(login_verify_OTP);
 router.route("/resend_otp").post(resendOTP);
+router.route("/userWallet/addBalance/:userId").patch(addWalletBalance);
 
 // secure routes
 // router.route("/logout").post(verifyJWT, logoutUser);
