@@ -1,7 +1,10 @@
 PORT = 8000
-MONGODB_URI=mongodb+srv://2022devify:1JL1DshskIxNQltf@cluster0.nf4yg.mongodb.net
+# MONGODB_URI=mongodb+srv://2022devify:1JL1DshskIxNQltf@cluster0.nf4yg.mongodb.net
+MONGODB_URI=mongodb://127.0.0.1:27017
 CORS_ORIGIN =*
 ACCESS_TOKEN_SECRET = GOOD_LUCK_BACKEND
 ACCESS_TOKEN_EXPIRY = 60d
 REFRESH_TOKEN_SECRET = good_luck_backend_code
 REFRESH_TOKEN_EXPIRY = 80d
+RAZORPAY_KEY_ID = rzp_test_IMABhjdnYqoapk
+RAZORPAY_KEY_SECRET = 1mXEEBf09BQ21nb2YPuLiiB2
