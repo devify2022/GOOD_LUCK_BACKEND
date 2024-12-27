@@ -1,7 +1,6 @@
 import mongoose, { Schema } from "mongoose";
 
-// Define the HomeTextSchema
-const homeTextSchema = new Schema(
+const homeLandBannerSchema = new Schema(
   {
     userId: {
       type: Schema.Types.ObjectId,
@@ -30,14 +29,13 @@ const homeTextSchema = new Schema(
         message: (props) => `${props.value} is not a valid phone number!`,
       },
     },
-    text_ad_description: {
+    banner_url: {
       type: String,
-      required: [true, "Text ad description is required."],
-    },
-    total_character: {
-      type: Number,
-      required: true,
-      min: [1, "Total character count must be at least 1."],
+      required: [true, "Banner URL is required."],
+      match: [
+        /^(http|https):\/\/[^ "]+$/,
+        "Please enter a valid URL for the banner.",
+      ],
     },
     is_subscribed: {
       type: Boolean,
@@ -76,4 +74,4 @@ const homeTextSchema = new Schema(
   { timestamps: true }
 );
 
-export const HomeText = mongoose.model("HomeText", homeTextSchema);
+export const HomeLandBanner = mongoose.model("HomeLandBanner", homeLandBannerSchema);

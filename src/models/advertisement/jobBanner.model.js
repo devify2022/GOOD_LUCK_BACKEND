@@ -67,7 +67,7 @@ const jobBannerSchema = new Schema(
     },
     category: {
       type: String,
-      enum: ["Home", "Land"],
+      enum: ["Govt", "Private"],
       required: [true, "Category is required."],
     },
   },

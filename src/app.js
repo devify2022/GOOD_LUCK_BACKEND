@@ -33,6 +33,10 @@ import matrimonyRoutes from "./routes/matrimony/matrimony.routes.js";
 import productCategoryRoutes from "./routes/product/productcategory.routes.js";
 import productRoutes from "./routes/product/product.routes.js";
 import orderRoutes from "./routes/product/order.routes.js";
+import homeBannerRouter from "./routes/advertisement/homeLandBanner.routes.js";
+import homeTextRouter from "./routes/advertisement/homeLandText.routes.js";
+import jobBannerRouter from "./routes/advertisement/jobBanner.routes.js";
+import jobTextRouter from "./routes/advertisement/jobText.routes.js";
 import paymentRouter from "./routes/payment/payment.routes.js";
 import razorpayRouter from "./routes/payment/razorpay.routes.js";
 
@@ -46,6 +50,10 @@ app.use("/good_luck/api/v1/matrimony", matrimonyRoutes);
 app.use("/good_luck/api/v1/productCategory", productCategoryRoutes);
 app.use("/good_luck/api/v1/product", productRoutes);
 app.use("/good_luck/api/v1/order", orderRoutes);
+app.use("/good_luck/api/v1/homeLandBanner", homeBannerRouter);
+app.use("/good_luck/api/v1/homeLandText", homeTextRouter);
+app.use("/good_luck/api/v1/jobBanner", jobBannerRouter);
+app.use("/good_luck/api/v1/jobText", jobTextRouter);
 app.use("/", paymentRouter);
 app.use("/", razorpayRouter);
 

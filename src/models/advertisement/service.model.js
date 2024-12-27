@@ -10,21 +10,19 @@ const serviceAdSchema = new Schema(
     },
     homeAdType: {
       type: String,
-      enum: ["HomeText", "HomeBanner"],
-      required: true,
+      enum: ["HomeLandText", "HomeLandBanner"],
+      default: "",
     },
-    home_ads: {
+    homeLandAdId: {
       type: Schema.Types.ObjectId,
-      refPath: "homeAdType",
     },
     jobAdType: {
       type: String,
       enum: ["JobText", "JobBanner"],
-      required: true,
+      default: "",
     },
-    job_ads: {
+    job_ad_id: {
       type: Schema.Types.ObjectId,
-      refPath: "JobText",
     },
     generale_ads: {
       type: Schema.Types.ObjectId,
