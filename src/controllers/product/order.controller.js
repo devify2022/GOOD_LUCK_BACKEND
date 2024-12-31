@@ -1,3 +1,6 @@
+import { Admin } from "../../models/admin/admin.model.js";
+import AffiliateMarketer from "../../models/affiliateMarketer/affiliateMarketer.model.js";
+import { Astrologer } from "../../models/astrologer/astroler.model.js";
 import { User } from "../../models/auth/user.model.js";
 import Order from "../../models/product/order.model.js";
 import Product from "../../models/product/product.model.js";
@@ -21,13 +24,13 @@ export const createOrder = asyncHandler(async (req, res) => {
       payment_method,
       is_payment_done,
       transaction_id,
+      promo_code,
     } = req.body;
 
     const requiredFields = [
       { name: "name", message: "Name is required" },
       { name: "city", message: "City name is required" },
       { name: "state", message: "State description is required" },
-      // { name: "phone", message: "Phone number is required" },
       {
         name: "order_details",
         message: "Order details(Product id) are required",
@@ -36,15 +39,10 @@ export const createOrder = asyncHandler(async (req, res) => {
       { name: "payment_method", message: "Payment method is required" },
     ];
 
-    const missingFields = requiredFields
-      .filter((field) => !req.body[field.name])
-      .map((field) => field.message);
-
-    if (missingFields.length > 0) {
-      throw new ApiError(
-        400,
-        `Missing required fields: ${missingFields.join(", ")}`
-      );
+    for (const field of requiredFields) {
+      if (!req.body[field.name]) {
+        return res.status(400).json(new ApiResponse(400, null, field.message));
+      }
     }
 
     const user = await User.findById(userId);
@@ -58,12 +56,68 @@ export const createOrder = asyncHandler(async (req, res) => {
       throw new ApiError(404, "Product not found");
     }
 
+    let commission = 0;
+    let promoUser = null;
+
+    if (promo_code) {
+      // Check if the promo code belongs to an astrologer
+      promoUser = await Astrologer.findOne({ promo_code });
+      if (!promoUser) {
+        // Check if the promo code belongs to an affiliate marketer
+        promoUser = await AffiliateMarketer.findOne({ promo_code });
+      }
+
+      if (!promoUser) {
+        return res
+          .status(404)
+          .json(new ApiResponse(404, null, "Promo code is not available"));
+      }
+
+      commission = total_price * 0.3; // 30% commission
+      promoUser.wallet.balance += commission;
+      promoUser.wallet.transactionHistory.push({
+        transactionId: transaction_id || generateTransactionId(),
+        timestamp: Date.now(),
+        type: "credit",
+        credit_type: "Ecom",
+        amount: commission,
+        description: "Commission for order",
+      });
+      await promoUser.save();
+    }
+
+    // Add the remaining amount to the admin wallet
+    const admin = await Admin.findOne();
+    const adminCommission = total_price - commission;
+    admin.wallet.balance += adminCommission;
+    admin.wallet.transactionHistory.push({
+      transactionId: transaction_id || generateTransactionId(),
+      timestamp: Date.now(),
+      type: "credit",
+      credit_type: "Ecom",
+      amount: adminCommission,
+      description: "Admin commission for order",
+    });
+    await admin.save();
+
+    // Debit the user's wallet
+    user.wallet.balance -= total_price;
+    user.wallet.transactionHistory.push({
+      transactionId: transaction_id || generateTransactionId(),
+      timestamp: Date.now(),
+      type: "debit",
+      debit_type: "Ecom",
+      amount: total_price,
+      description: "Payment for order",
+    });
+    await user.save();
+
     const newOrder = new Order({
       userId,
       name,
       city,
       state,
-      phone: phone || user.phone,
+      phone,
       order_details,
       delivery_date,
       quantity,
@@ -71,6 +125,7 @@ export const createOrder = asyncHandler(async (req, res) => {
       payment_method,
       is_payment_done,
       transaction_id,
+      promo_code,
     });
 
     await newOrder.save();
@@ -79,7 +134,9 @@ export const createOrder = asyncHandler(async (req, res) => {
       .status(201)
       .json(new ApiResponse(201, newOrder, "Order created successfully"));
   } catch (error) {
-    throw new ApiError(500, error.message);
+    return res
+      .status(500)
+      .json(new ApiResponse(500, null, "Internal Server Error", error.message));
   }
 });
 
@@ -200,36 +257,36 @@ export const updateOrderById = asyncHandler(async (req, res) => {
   }
 });
 
-// Cancel Order
-export const cancelOrder = asyncHandler(async (req, res) => {
-  try {
-    const { id } = req.params;
+// // Cancel Order
+// export const cancelOrder = asyncHandler(async (req, res) => {
+//   try {
+//     const { id } = req.params;
 
-    const order = await Order.findById(id);
+//     const order = await Order.findById(id);
 
-    if (!order) {
-      return res
-        .status(404)
-        .json(new ApiResponse(404, null, "Order not found"));
-    }
+//     if (!order) {
+//       return res
+//         .status(404)
+//         .json(new ApiResponse(404, null, "Order not found"));
+//     }
 
-    if (order.is_order_complete) {
-      return res
-        .status(400)
-        .json(new ApiResponse(400, null, "Cannot cancel a completed order"));
-    }
+//     if (order.is_order_complete) {
+//       return res
+//         .status(400)
+//         .json(new ApiResponse(400, null, "Cannot cancel a completed order"));
+//     }
 
-    order.cancel_order.isCancel = true;
-    order.cancel_order.cancel_date_time = new Date();
-    await order.save();
+//     order.cancel_order.isCancel = true;
+//     order.cancel_order.cancel_date_time = new Date();
+//     await order.save();
 
-    return res
-      .status(200)
-      .json(new ApiResponse(200, order, "Order canceled successfully"));
-  } catch (error) {
-    throw new ApiError(500, error.message);
-  }
-});
+//     return res
+//       .status(200)
+//       .json(new ApiResponse(200, order, "Order canceled successfully"));
+//   } catch (error) {
+//     throw new ApiError(500, error.message);
+//   }
+// });
 
 // Delete Order
 export const deleteOrder = asyncHandler(async (req, res) => {

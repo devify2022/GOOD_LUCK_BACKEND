@@ -2,6 +2,8 @@ import { Astrologer } from "../../../models/astrologer/astroler.model.js";
 import { User } from "../../../models/auth/user.model.js";
 import { ChatRequest } from "../../../models/chatRequest/chatRequest.model.js";
 import { AstrologerChat } from "../../../models/chatWithAstrologer/astrologerChat.model.js";
+import { ApiResponse } from "../../../utils/apiResponse.js";
+import { asyncHandler } from "../../../utils/asyncHandler.js";
 import { endChat, getChatPrice, startChat } from "./chatBilling.js";
 
 // Function to handle chat requests
@@ -37,7 +39,9 @@ export async function handleChatRequest(io, data, socket) {
 
     // Check if the user has sufficient funds
     if (user.wallet.balance < costPerMinute) {
-      return io.to(user.socketId).emit("chat-error", { message: "Insufficient funds." });
+      return io
+        .to(user.socketId)
+        .emit("chat-error", { message: "Insufficient funds." });
     }
 
     // Save the chat request in the database
@@ -59,7 +63,6 @@ export async function handleChatRequest(io, data, socket) {
     socket.emit("error", { message: "Error processing chat request." });
   }
 }
-
 
 // Function to handle astrologer's response to a chat request
 export async function handleChatResponse(io, data) {
@@ -211,3 +214,37 @@ export async function handleEndChat(io, roomId, sender) {
     console.error("Error handling end of chat:", error);
   }
 }
+
+// Get chat history by user ID and astrologer ID
+export const getAstrologerChatHistory = asyncHandler(async (req, res) => {
+  const { userId, astrologerId } = req.params;
+
+  // Find chat history where the userId and astrologerId match
+  const chatHistory = await AstrologerChat.find({
+    $or: [
+      { "messages.senderId": userId, "messages.senderModel": "User" },
+      {
+        "messages.senderId": astrologerId,
+        "messages.senderModel": "Astrologer",
+      },
+    ],
+  });
+
+  if (!chatHistory || chatHistory.length === 0) {
+    return res
+      .status(404)
+      .json(
+        new ApiResponse(
+          404,
+          null,
+          "No chat history found for the user and astrologer"
+        )
+      );
+  }
+
+  return res
+    .status(200)
+    .json(
+      new ApiResponse(200, chatHistory, "Chat history retrieved successfully")
+    );
+});

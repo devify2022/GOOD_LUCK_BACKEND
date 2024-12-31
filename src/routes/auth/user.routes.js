@@ -4,6 +4,7 @@ import {
   addWalletBalance,
   auth_request_verify_OTP,
   authRequest,
+  getWalletBalanceByUserId,
   login_verify_OTP,
   loginUser,
   refreshAccessToken,
@@ -18,6 +19,7 @@ router.route("/login").post(loginUser);
 router.route("/loginVerifyotp").post(login_verify_OTP);
 router.route("/resend_otp").post(resendOTP);
 router.route("/userWallet/addBalance/:userId").patch(addWalletBalance);
+router.get('/wallet-balance/:userId', getWalletBalanceByUserId);
 
 // secure routes
 // router.route("/logout").post(verifyJWT, logoutUser);

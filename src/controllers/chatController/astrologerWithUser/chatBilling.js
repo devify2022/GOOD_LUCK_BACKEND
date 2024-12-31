@@ -24,6 +24,7 @@ async function deductUserWallet(
   const transaction = {
     timestamp: new Date(),
     type: "debit",
+    debit_type: "chat",
     amount: costPerMinute,
     description: `Chat session (${chatType}) with Astrologer ID: ${astrologerId}`,
     reference: `ChatRoom-${roomId}`,
@@ -47,10 +48,11 @@ async function creditAstrologerAndAdmin(astrologer, admin, totalCost, roomId) {
   astrologer.wallet.transactionHistory.push({
     timestamp: new Date(),
     type: "credit",
+    credit_type: "chat",
     amount: astrologerShare,
     description: "Chat earnings",
     reference: `ChatRoom-${roomId}`,
-    transactionId: transactionId
+    transactionId: transactionId,
   });
   await astrologer.save();
 
@@ -58,6 +60,7 @@ async function creditAstrologerAndAdmin(astrologer, admin, totalCost, roomId) {
   admin.wallet.transactionHistory.push({
     timestamp: new Date(),
     type: "credit",
+    credit_type: "chat",
     amount: adminShare,
     description: "Chat commission",
     reference: `ChatRoom-${roomId}`,

@@ -1,7 +1,8 @@
-import mongoose, { Schema } from "mongoose";
-import walletSchema from "../wallet/wallet.model.js";
+import mongoose from "mongoose";
 
-const astrologerSchema = new Schema(
+const { Schema } = mongoose;
+
+const astrologerRequestSchema = new Schema(
   {
     userId: {
       type: Schema.Types.ObjectId,
@@ -16,6 +17,19 @@ const astrologerSchema = new Schema(
     socketId: {
       type: String,
       default: null,
+    },
+    isApproved: {
+      type: Boolean,
+      default: false,
+    },
+    request_status: {
+      type: String,
+      enum: ["approved", "rejected", "pending"],
+      default: "pending",
+    },
+    request_status_message: {
+      type: String,
+      default: "",
     },
     Fname: {
       type: String,
@@ -48,10 +62,6 @@ const astrologerSchema = new Schema(
     total_earning: {
       type: Number,
       default: 0,
-    },
-    wallet: {
-      type: walletSchema,
-      default: () => ({ balance: 0, transactionHistory: [] }),
     },
     status: {
       type: String,
@@ -92,11 +102,13 @@ const astrologerSchema = new Schema(
     },
     adhar_card: [String],
     pan_card: [String],
-    promo_code: {
-      type: Number,
-    },
   },
   { timestamps: true }
 );
 
-export const Astrologer = mongoose.model("Astrologer", astrologerSchema);
+const AstrologerRequest = mongoose.model(
+  "AstrologerRequest",
+  astrologerRequestSchema
+);
+
+export default AstrologerRequest;

@@ -1,4 +1,4 @@
 export const generateTransactionId = () => {
   // You can use any unique ID generation strategy, e.g., UUID
-  return `txn-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+  return `txn_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 };

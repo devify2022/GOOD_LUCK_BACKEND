@@ -139,6 +139,7 @@ const auth_request_verify_OTP = asyncHandler(async (req, res) => {
           transactionId: generateTransactionId(),
           timestamp: Date.now(),
           type: "credit",
+          credit_type: "others",
           amount: 0,
           description: "Initial wallet setup",
         },
@@ -390,8 +391,6 @@ const addWalletBalance = asyncHandler(async (req, res) => {
     throw new ApiError(404, "User not found");
   }
 
-  
-
   // Add the balance and create the transaction history entry
   user.wallet.balance += amount;
   user.wallet.transactionHistory.push({
@@ -414,6 +413,30 @@ const addWalletBalance = asyncHandler(async (req, res) => {
   });
 });
 
+// Get wallet balance by user ID
+const getWalletBalanceByUserId = asyncHandler(async (req, res) => {
+  const { userId } = req.params;
+
+  // Find the user by ID
+  const user = await User.findById(userId);
+  if (!user) {
+    return res.status(404).json(new ApiResponse(404, null, "User not found"));
+  }
+
+  // Get the wallet balance
+  const walletBalance = user.wallet.balance;
+
+  return res
+    .status(200)
+    .json(
+      new ApiResponse(
+        200,
+        { balance: walletBalance },
+        "Wallet balance retrieved successfully"
+      )
+    );
+});
+
 export {
   loginUser,
   login_verify_OTP,
@@ -422,5 +445,6 @@ export {
   logoutUser,
   refreshAccessToken,
   resendOTP,
-  addWalletBalance
+  addWalletBalance,
+  getWalletBalanceByUserId
 };

@@ -55,6 +55,12 @@ const updateRequestAstrologerProfileSchema = new Schema(
       type: [String],
       required: [true, "Certifications are required"],
     },
+    adhar_card: [String],
+    pan_card: [String],
+    promo_code: {
+      type: Boolean,
+      default: false,
+    },
     otp: {
       type: Number,
     },
@@ -71,7 +77,10 @@ updateRequestAstrologerProfileSchema.methods.verifyOtp = function (enteredOtp) {
 };
 
 // Method to set OTP with expiration
-updateRequestAstrologerProfileSchema.methods.setOtp = function (otp, expiryInMinutes = 5) {
+updateRequestAstrologerProfileSchema.methods.setOtp = function (
+  otp,
+  expiryInMinutes = 5
+) {
   this.otp = otp;
   this.otpExpiresAt = Date.now() + expiryInMinutes * 60 * 1000; // Set expiry time for OTP
 };
