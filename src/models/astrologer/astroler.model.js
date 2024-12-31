@@ -17,6 +17,10 @@ const astrologerSchema = new Schema(
       type: String,
       default: null,
     },
+    isActive: {
+      type: Boolean,
+      default: false,
+    },
     Fname: {
       type: String,
     },

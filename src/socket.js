@@ -40,6 +40,7 @@ export const setupSocketIO = (server) => {
             !user.isAffiliate_marketer
           ) {
             user.socketId = socket.id; // Update socket ID
+            user.isActive = true; // Set user as active
             await user.save(); // Save the user document
             activeUsers.set(userId, socket.id); // Track active users
             console.log(
@@ -87,6 +88,7 @@ export const setupSocketIO = (server) => {
         }
 
         astrologer.socketId = socket.id; // Update socket ID
+        astrologer.isActive = true; // Set astrologer as active
         await astrologer.save(); // Save the astrologer document
         activeUsers.set(userId, socket.id); // Track active astrologers
         console.log(
