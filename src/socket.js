@@ -90,9 +90,9 @@ export const setupSocketIO = (server) => {
         astrologer.socketId = socket.id; // Update socket ID
         astrologer.isActive = true; // Set astrologer as active
         await astrologer.save(); // Save the astrologer document
-        activeUsers.set(userId, socket.id); // Track active astrologers
+        activeUsers.set(astrologerId, socket.id); // Track active astrologers
         console.log(
-          `Astrologer registered: ${userId} with socket ID: ${socket.id}`
+          `Astrologer registered: ${astrologerId} with socket ID: ${socket.id}`
         );
       } catch (error) {
         console.error("Error updating astrologer's socketId:", error);
