@@ -78,10 +78,10 @@ export const setupSocketIO = (server) => {
     });
 
     // Register astrologer and update socket ID
-    socket.on("register_astrologer", async (userId) => {
+    socket.on("register_astrologer", async (astrologerId) => {
       try {
         // Find the astrologer by userId
-        const astrologer = await Astrologer.findOne({ userId });
+        const astrologer = await Astrologer.findById(astrologerId);
 
         if (!astrologer) {
           return socket.emit("error", { message: "Astrologer not found." });
