@@ -11,6 +11,7 @@ import { Matrimony } from "../../models/matrimony/matrimony.model.js";
 import { Dating } from "../../models/dating/dating.model.js";
 import { Admin } from "../../models/admin/admin.model.js";
 import { generateTransactionId } from "../../utils/generateTNX.js";
+import { Astrologer } from "../../models/astrologer/astroler.model.js";
 
 // Helper to generate access and refresh tokens
 const generateAccessAndRefreshToken = async (authId) => {
@@ -189,6 +190,7 @@ const loginUser = asyncHandler(async (req, res) => {
 
   const authRecord = await Auth.findOne({ phone });
   const userRecord = await User.findOne({ phone });
+  const astrologer = await Astrologer.findOne({ phone });
 
   if (!authRecord) {
     throw new ApiError(404, "User does not exist");
@@ -221,6 +223,7 @@ const loginUser = asyncHandler(async (req, res) => {
       200,
       {
         userId: userRecord._id,
+        astrologer_id: astrologer ? astrologer._id : null,
         role: authRecord.user_type,
         accessToken,
         refreshToken,
@@ -241,6 +244,7 @@ const login_verify_OTP = asyncHandler(async (req, res) => {
 
   const authRecord = await Auth.findOne({ phone });
   const userRecord = await User.findOne({ phone });
+  const astrologer = await Astrologer.findOne({ phone });
   if (!authRecord) {
     throw new ApiError(404, "User not found");
   }
@@ -271,6 +275,7 @@ const login_verify_OTP = asyncHandler(async (req, res) => {
       200,
       {
         userId: userRecord._id,
+        astrologer_id: astrologer ? astrologer._id : null,
         role: authRecord.user_type,
         phone: authRecord.phone,
         accessToken,
@@ -446,5 +451,5 @@ export {
   refreshAccessToken,
   resendOTP,
   addWalletBalance,
-  getWalletBalanceByUserId
+  getWalletBalanceByUserId,
 };

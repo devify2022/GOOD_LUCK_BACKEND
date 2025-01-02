@@ -32,6 +32,8 @@ const generateUniquePromoCode = async () => {
 export const createAstrologerRequest = asyncHandler(async (req, res) => {
   try {
     const {
+      Fname,
+      Lname,
       phone,
       specialisation,
       chat_price,
@@ -48,6 +50,8 @@ export const createAstrologerRequest = asyncHandler(async (req, res) => {
 
     // Validate required fields
     const requiredFields = [
+      "Fname",
+      "Lname",
       "phone",
       "specialisation",
       "chat_price",
@@ -81,8 +85,8 @@ export const createAstrologerRequest = asyncHandler(async (req, res) => {
           const astrologer = new AstrologerRequest({
             authId: existsAuth ? existsAuth._id : null,
             userId: existsUser._id,
-            Fname: existsUser.Fname,
-            Lname: existsUser.Lname,
+            Fname: Fname,
+            Lname: Lname,
             phone: existsUser.phone,
             specialisation,
             rating: 2,
