@@ -49,7 +49,7 @@ export async function handleChatRequest(io, data, socket) {
     await chatRequest.save();
 
     // Notify the astrologer about the incoming chat request using their socket ID
-    io.to(astrologer.socketId).emit("chat-request-astrologer", {
+    io.to(astrologer.socketId).emit("chat-request-from-user", {
       requestId: chatRequest._id,
       userId,
       chatType,

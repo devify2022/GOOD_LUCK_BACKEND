@@ -8,7 +8,8 @@ dotenv.config({
 
 connectDB()
   .then(() => {
-    server.listen(process.env.PORT || 8000, () => {
+    console.log(process.env.PORT)
+    server.listen(process.env.PORT, () => {
       console.log(`Server and Socket.IO are running on port ${process.env.PORT}`);
     });
     server.on("error", (error) => {
