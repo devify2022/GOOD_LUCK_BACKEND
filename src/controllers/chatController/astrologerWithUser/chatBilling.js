@@ -5,6 +5,7 @@ import { generateTransactionId } from "../../../utils/generateTNX.js";
 
 // Global intervals object to keep track of active intervals
 const intervals = {};
+const pausedIntervals = {};
 
 async function deductUserWallet(
   user,
@@ -175,6 +176,35 @@ export function endChat(io, roomId, sender) {
   });
 }
 
+// Function to pause chat billing
+export function pauseChat(io, roomId) {
+  if (intervals[roomId]) {
+    clearInterval(intervals[roomId]); // Stop the timer
+    pausedIntervals[roomId] = intervals[roomId];
+    delete intervals[roomId];
+
+    // Emit a notification to both user and astrologer
+    io.to(roomId).emit("chat-paused", {
+      message: "Chat has been paused",
+    });
+  }
+}
+
+// Function to resume chat billing
+export function resumeChat(io, roomId, chatType, userId, astrologerId) {
+  if (pausedIntervals[roomId]) {
+    intervals[roomId] = pausedIntervals[roomId];
+    delete pausedIntervals[roomId];
+
+    // Emit a notification to both user and astrologer
+    io.to(roomId).emit("chat-resumed", {
+      message: "Chat has been resumed",
+    });
+
+    startChat(io, roomId, chatType, userId, astrologerId);
+  }
+}
+
 // Utility function to get chat price
 export async function getChatPrice(chatType, astrologerId) {
   try {
@@ -196,7 +226,7 @@ export async function getChatPrice(chatType, astrologerId) {
         throw new Error("Invalid chat type");
     }
   } catch (error) {
-    console.error("Error fetching chat price:", error);
+    console.error("Error fetching chat price:", error.message);
     throw new Error("Could not retrieve chat price");
   }
 }

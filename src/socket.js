@@ -10,6 +10,8 @@ import {
   handleChatRequest,
   handleChatResponse,
   handleEndChat,
+  handlePauseChat,
+  handleResumeChat,
 } from "./controllers/chatController/astrologerWithUser/controller.js";
 
 export const setupSocketIO = (server) => {
@@ -210,6 +212,16 @@ export const setupSocketIO = (server) => {
       if (result.error) {
         socket.emit("error", result.error);
       }
+    });
+
+    // Handle pause chat
+    socket.on("pause-chat", (data) => {
+      handlePauseChat(io, data);
+    });
+
+    // Handle resume chat
+    socket.on("resume-chat", (data) => {
+      handleResumeChat(io, data);
     });
 
     // Handle chat termination

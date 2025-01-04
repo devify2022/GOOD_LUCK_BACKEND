@@ -4,7 +4,7 @@ import { ChatRequest } from "../../../models/chatRequest/chatRequest.model.js";
 import { AstrologerChat } from "../../../models/chatWithAstrologer/astrologerChat.model.js";
 import { ApiResponse } from "../../../utils/apiResponse.js";
 import { asyncHandler } from "../../../utils/asyncHandler.js";
-import { endChat, getChatPrice, startChat } from "./chatBilling.js";
+import { endChat, getChatPrice, pauseChat, resumeChat, startChat } from "./chatBilling.js";
 
 // Function to handle chat requests
 export async function handleChatRequest(io, data, socket) {
@@ -49,7 +49,7 @@ export async function handleChatRequest(io, data, socket) {
     await chatRequest.save();
 
     // Notify the astrologer about the incoming chat request using their socket ID
-    io.to(astrologer.socketId).emit("chat-request", {
+    io.to(astrologer.socketId).emit("chat-request-astrologer", {
       requestId: chatRequest._id,
       userId,
       chatType,
@@ -212,6 +212,30 @@ export async function handleEndChat(io, roomId, sender) {
     console.log("Astrologer's status updated to available:", astrologer._id);
   } catch (error) {
     console.error("Error handling end of chat:", error);
+  }
+}
+
+// Function to handle pausing the chat
+export async function handlePauseChat(io, data) {
+  const { roomId } = data;
+
+  try {
+    pauseChat(io, roomId);
+  } catch (error) {
+    console.error("Error pausing chat:", error);
+    io.to(roomId).emit("chat-error", { message: "Error pausing chat." });
+  }
+}
+
+// Function to handle resuming the chat
+export async function handleResumeChat(io, data) {
+  const { roomId, chatType, userId, astrologerId } = data;
+
+  try {
+    resumeChat(io, roomId, chatType, userId, astrologerId);
+  } catch (error) {
+    console.error("Error resuming chat:", error);
+    io.to(roomId).emit("chat-error", { message: "Error resuming chat." });
   }
 }
 
