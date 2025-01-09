@@ -205,6 +205,114 @@ export function resumeChat(io, roomId, chatType, userId, astrologerId) {
   }
 }
 
+// Function to start call billing
+export async function startCall(io, roomId, callType, userId, astrologerId) {
+  try {
+    const astrologer = await Astrologer.findById(astrologerId);
+    const user = await User.findById(userId);
+    const admin = await Admin.findOne();
+
+    if (!astrologer || !user || !admin) {
+      io.to(roomId).emit("call-error", {
+        message: "Astrologer, User, or Admin not found",
+      });
+      return;
+    }
+
+    const costPerMinute = await getChatPrice(callType, astrologerId);
+
+    const firstDeduction = await deductUserWallet(
+      user,
+      costPerMinute,
+      roomId,
+      callType,
+      astrologerId
+    );
+
+    if (!firstDeduction.success) {
+      io.to(roomId).emit("call-error", {
+        message: firstDeduction.message,
+      });
+      io.to(roomId).emit("call-end", { reason: firstDeduction.message });
+
+      astrologer.status = "available";
+      await astrologer.save();
+      return;
+    }
+
+    await creditAstrologerAndAdmin(astrologer, admin, costPerMinute, roomId);
+
+    let totalTime = 1;
+
+    const interval = setInterval(async () => {
+      try {
+        const deductionResult = await deductUserWallet(
+          user,
+          costPerMinute,
+          roomId,
+          callType,
+          astrologerId
+        );
+
+        if (!deductionResult.success) {
+          io.to(roomId).emit("call-error", {
+            message: deductionResult.message,
+          });
+          io.to(roomId).emit("call-end", { reason: deductionResult.message });
+
+          astrologer.status = "available";
+          await astrologer.save();
+          clearInterval(interval);
+          delete intervals[roomId];
+          return;
+        }
+
+        await creditAstrologerAndAdmin(
+          astrologer,
+          admin,
+          costPerMinute,
+          roomId
+        );
+
+        totalTime++;
+        io.to(roomId).emit("call-timer", {
+          roomId,
+          cost: costPerMinute,
+          elapsedTime: totalTime,
+        });
+      } catch (error) {
+        console.error("Error during interval execution:", error);
+        io.to(roomId).emit("call-error", {
+          message: "An error occurred during call billing",
+        });
+        clearInterval(interval);
+        delete intervals[roomId];
+      }
+    }, 60000);
+
+    intervals[roomId] = interval;
+  } catch (error) {
+    console.error("Error in startCall:", error);
+    io.to(roomId).emit("call-error", {
+      message: "An error occurred during call initialization",
+    });
+  }
+}
+
+// End call billing
+export function endCall(io, roomId, sender) {
+  if (intervals[roomId]) {
+    clearInterval(intervals[roomId]); // Stop the timer
+    delete intervals[roomId];
+  }
+
+  // Emit a notification to both user and astrologer
+  io.to(roomId).emit("call-end", {
+    reason:
+      sender === "user" ? "Call ended by user" : "Call ended by astrologer",
+  });
+}
+
 // Utility function to get chat price
 export async function getChatPrice(chatType, astrologerId) {
   try {

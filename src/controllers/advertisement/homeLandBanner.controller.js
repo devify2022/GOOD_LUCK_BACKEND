@@ -6,22 +6,8 @@ import handleValidationError from "../../utils/validationError.js";
 
 // Create a HomeBanner ad and a corresponding ServiceAd
 export const createHomeLandBannerAd = async (req, res, next) => {
-  const {
-    userId,
-    city,
-    state,
-    pincode,
-    phone,
-    banner_url,
-    is_subscribed,
-    subs_plan,
-    subs_start_date,
-    subs_end_date,
-    transaction_id,
-    is_promoCode_applied,
-    promocode,
-    category,
-  } = req.body;
+  const { userId, title, city, state, pincode, phone, banner_url, category } =
+    req.body;
 
   try {
     // Step 1: Find the user by userId
@@ -37,25 +23,32 @@ export const createHomeLandBannerAd = async (req, res, next) => {
         .json(new ApiResponse(400, null, "User is not verified"));
     }
 
-    // Step 3: Proceed with the creation of the HomeBannerAd
+    // Step 3: Check if the user has an active subscription
+    if (!user.adSubscription || !user.adSubscription.isSubscribed) {
+      return res
+        .status(403)
+        .json(
+          new ApiResponse(
+            403,
+            null,
+            "User does not have an active subscription to create ads"
+          )
+        );
+    }
+
+    // Step 4: Proceed with the creation of the HomeBannerAd
     const homeLandBannerAd = await HomeLandBanner.create({
       userId,
+      title,
       city,
       state,
       pincode,
       phone: phone || user.phone,
       banner_url,
-      is_subscribed,
-      subs_plan,
-      subs_start_date,
-      subs_end_date,
-      transaction_id,
-      is_promoCode_applied,
-      promocode,
       category,
     });
 
-    // Step 4: Create the corresponding ServiceAd
+    // Step 5: Create the corresponding ServiceAd
     const serviceAd = await ServiceAds.create({
       userId,
       homeAdType: "HomeLandBanner",
@@ -65,14 +58,31 @@ export const createHomeLandBannerAd = async (req, res, next) => {
       generale_ads: null,
     });
 
-    // Return the success response
+    // Step 6: Add the ad ID to the user's adSubscription adsDetails
+    user.adSubscription.adsDetails.push({
+      adType: "HomeLandBanner",
+      adId: homeLandBannerAd._id,
+      details: {
+        title,
+        city,
+        state,
+        pincode,
+        banner_url,
+        category,
+      },
+    });
+
+    // Save the updated user
+    await user.save();
+
+    // Step 7: Return the success response
     res
       .status(201)
       .json(
         new ApiResponse(
           201,
           { homeLandBannerAd, serviceAd },
-          "Ad created successfully"
+          "Ad created successfully and added to subscription details"
         )
       );
   } catch (error) {
@@ -95,11 +105,7 @@ export const getAllHomeLandBannerAds = async (req, res, next) => {
     res
       .status(200)
       .json(
-        new ApiResponse(
-          200,
-          homeLandBannerAds,
-          "Fetched ads successfully"
-        )
+        new ApiResponse(200, homeLandBannerAds, "Fetched ads successfully")
       );
   } catch (error) {
     next(error);
@@ -218,13 +224,7 @@ export const updateHomeLandBannerAdByUserId = async (req, res, next) => {
     if (!homeLandBannerAds) {
       return res
         .status(404)
-        .json(
-          new ApiResponse(
-            404,
-            null,
-            `No ad found for userId: ${userId}`
-          )
-        );
+        .json(new ApiResponse(404, null, `No ad found for userId: ${userId}`));
     }
 
     // Step 3: Update the corresponding ServiceAd if homeAdType or homeLandAdId is modified
@@ -238,13 +238,7 @@ export const updateHomeLandBannerAdByUserId = async (req, res, next) => {
     // Step 4: Return the success response
     res
       .status(200)
-      .json(
-        new ApiResponse(
-          200,
-          homeLandBannerAds,
-          "Ad updated successfully"
-        )
-      );
+      .json(new ApiResponse(200, homeLandBannerAds, "Ad updated successfully"));
   } catch (error) {
     if (error.name === "ValidationError") {
       const errors = handleValidationError(error);
@@ -274,13 +268,7 @@ export const deleteHomeLandBannerAdByUserId = async (req, res, next) => {
     if (!homeLandBannerAds) {
       return res
         .status(404)
-        .json(
-          new ApiResponse(
-            404,
-            null,
-            `No ad found for userId: ${userId}`
-          )
-        );
+        .json(new ApiResponse(404, null, `No ad found for userId: ${userId}`));
     }
 
     // Step 3: Delete the corresponding ServiceAd
@@ -289,13 +277,7 @@ export const deleteHomeLandBannerAdByUserId = async (req, res, next) => {
     // Step 4: Return the success response
     res
       .status(200)
-      .json(
-        new ApiResponse(
-          200,
-          homeLandBannerAds,
-          "Ad deleted successfully"
-        )
-      );
+      .json(new ApiResponse(200, homeLandBannerAds, "Ad deleted successfully"));
   } catch (error) {
     next(error);
   }

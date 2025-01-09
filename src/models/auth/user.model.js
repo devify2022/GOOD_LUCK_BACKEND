@@ -6,6 +6,7 @@ const usersSchema = new Schema(
     authId: {
       type: Schema.Types.ObjectId,
       ref: "Auth",
+      required: true,
     },
     socketId: {
       type: String,
@@ -13,44 +14,72 @@ const usersSchema = new Schema(
     },
     Fname: {
       type: String,
-      // required: [true, "First name is required"],
     },
     Lname: {
       type: String,
-      // required: [true, "Last name is required"],
     },
     gender: {
       type: String,
       enum: ["Male", "Female", "Others"],
-      // required: [true, "Gender is required"],
     },
     date_of_birth: {
       type: String,
-      // required: [true, "DOB is required"],
     },
     phone: {
       type: String,
       required: [true, "Phone number is required"],
-      validate: {
-        validator: function (v) {
-          return /^(\+\d{1,3}[- ]?)?\d{10}$/.test(v);
-        },
-        message: (props) => `${props.value} is not a valid phone number!`,
-      },
     },
     last_login: {
       type: String,
-      validate: {
-        validator: function (v) {
-          return /\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}.\d{3}Z/.test(v); // ISO 8601 date format
-        },
-        message: (props) => `${props.value} is not a valid date format!`,
-      },
     },
     services: [String],
     wallet: {
       type: walletSchema, // Use the wallet schema here
       default: () => ({ balance: 0, transactionHistory: [] }), // Default structure for the wallet
+    },
+    adSubscription: {
+      plan: {
+        type: Schema.Types.ObjectId,
+        ref: "AdSubscription",
+      },
+      isSubscribed: {
+        type: Boolean,
+        default: false,
+      },
+      isPromoApplied: {
+        type: Boolean,
+        default: false,
+      },
+      promo_code: {
+        type: Number,
+      },
+      category: {
+        type: String,
+        default: "advertisement",
+      },
+      startDate: {
+        type: Date,
+      },
+      endDate: {
+        type: Date,
+      },
+      price: {
+        type: Number,
+      },
+      adsDetails: [
+        {
+          adType: {
+            type: String,
+            enum: ["HomeLandText", "HomeLandBanner", "JobText", "JobBanner"],
+          },
+          adId: {
+            type: Schema.Types.ObjectId,
+          },
+          details: {
+            type: Object,
+          },
+        },
+      ],
     },
     isVerified: {
       type: Boolean,
@@ -71,6 +100,10 @@ const usersSchema = new Schema(
     isAdmin: {
       type: Boolean,
       default: false,
+    },
+    superNote: {
+      type: Number,
+      default: 2000,
     },
     refreshToken: {
       type: String,

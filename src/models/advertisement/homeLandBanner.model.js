@@ -7,6 +7,10 @@ const homeLandBannerSchema = new Schema(
       ref: "User",
       required: true,
     },
+    title: {
+      type: String,
+      required: [true, "Title is required."],
+    },
     city: {
       type: String,
       required: [true, "City is required."],
@@ -21,13 +25,6 @@ const homeLandBannerSchema = new Schema(
     },
     phone: {
       type: String,
-      // required: [true, "Phone number is required"],
-      validate: {
-        validator: function (v) {
-          return /^(\+\d{1,3}[- ]?)?\d{10}$/.test(v);
-        },
-        message: (props) => `${props.value} is not a valid phone number!`,
-      },
     },
     banner_url: {
       type: String,
@@ -36,34 +33,6 @@ const homeLandBannerSchema = new Schema(
         /^(http|https):\/\/[^ "]+$/,
         "Please enter a valid URL for the banner.",
       ],
-    },
-    is_subscribed: {
-      type: Boolean,
-      default: false,
-    },
-    subs_plan: {
-      type: String,
-      default: null,
-    },
-    subs_start_date: {
-      type: Date,
-      default: null,
-    },
-    subs_end_date: {
-      type: Date,
-      default: null,
-    },
-    transaction_id: {
-      type: String,
-      default: null,
-    },
-    is_promoCode_applied: {
-      type: Boolean,
-      default: false,
-    },
-    promocode: {
-      type: String,
-      default: null,
     },
     category: {
       type: String,

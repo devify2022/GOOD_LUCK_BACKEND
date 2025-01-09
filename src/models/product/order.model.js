@@ -69,6 +69,9 @@ const orderSchema = new Schema(
       type: Boolean,
       default: false,
     },
+    promo_code: {
+      type: Number,
+    },
     transaction_id: {
       type: String,
       required: function () {

@@ -12,6 +12,8 @@ import { Dating } from "../../models/dating/dating.model.js";
 import { Admin } from "../../models/admin/admin.model.js";
 import { generateTransactionId } from "../../utils/generateTNX.js";
 import { Astrologer } from "../../models/astrologer/astroler.model.js";
+import { AdSubscription } from "../../models/subscription/adSubcription.model.js";
+import AffiliateMarketer from "../../models/affiliateMarketer/affiliateMarketer.model.js";
 
 // Helper to generate access and refresh tokens
 const generateAccessAndRefreshToken = async (authId) => {
@@ -442,6 +444,172 @@ const getWalletBalanceByUserId = asyncHandler(async (req, res) => {
     );
 });
 
+// Buy Ad Subscription
+const buyAdSubscription = asyncHandler(async (req, res) => {
+  const { userId, planType, promoCode, transactionId } = req.body;
+
+  if (!userId || !planType) {
+    throw new ApiError(400, "User ID and plan type are required.");
+  }
+
+  // Now deduct the amount from the user's wallet
+  const user = await User.findById(userId);
+  if (!user) {
+    throw new ApiError(404, "User not found.");
+  }
+
+  const subscriptionPlans = await AdSubscription.findOne();
+  if (!subscriptionPlans) {
+    throw new ApiError(404, "Ad subscription plans not found.");
+  }
+
+  // Determine the price based on the planType
+  const price =
+    planType === "one_month_plan"
+      ? subscriptionPlans.one_month_plan
+      : planType === "one_year_plan"
+        ? subscriptionPlans.one_year_plan
+        : null;
+
+  if (price === null) {
+    throw new ApiError(400, "Invalid plan type.");
+  }
+
+  // Initialize the discounted price (no discount is applied in this case)
+  let discountedPrice = price;
+  let promoUser = null;
+
+  if (promoCode) {
+    // Check if the promo code is for an affiliate marketer or astrologer
+    const affiliate = await AffiliateMarketer.findOne({
+      promo_code: promoCode,
+    });
+    const astrologer = await Astrologer.findOne({ promo_code: promoCode });
+
+    if (affiliate) {
+      promoUser = affiliate;
+    } else if (astrologer) {
+      promoUser = astrologer;
+    }
+
+    // If no valid promo user is found, throw an error
+    if (!promoUser) {
+      throw new ApiError(400, "Invalid promo code.");
+    }
+
+    // Calculate the 20% commission for the promo user and 80% for the admin
+    const promoUserCommission = 0.2 * discountedPrice;
+    const adminCommission = 0.8 * discountedPrice;
+
+    // Credit 20% commission to the promo user's wallet
+    promoUser.wallet.balance += promoUserCommission;
+    promoUser.wallet.transactionHistory.push({
+      type: "credit",
+      credit_type: "advertisement",
+      amount: promoUserCommission,
+      description: "Commission from ad subscription",
+      reference: promoCode,
+      transactionId: transactionId,
+    });
+    await promoUser.save();
+
+    // Credit 80% commission to the admin's wallet
+    const admin = await Admin.findOne(); // Assuming a single admin
+    if (admin) {
+      admin.wallet.balance += adminCommission;
+      admin.wallet.transactionHistory.push({
+        type: "credit",
+        credit_type: "advertisement",
+        amount: adminCommission,
+        description: "Commission from ad subscription for admin",
+        reference: promoCode,
+        transactionId: transactionId,
+      });
+      await admin.save();
+    }
+  }
+
+  // if (user.wallet.balance < discountedPrice) {
+  //   throw new ApiError(400, "Insufficient wallet balance.");
+  // }
+
+  // Add the amount reciept in the user's wallet
+  user.wallet.transactionHistory.push({
+    type: "debit",
+    debit_type: "advertisement",
+    amount: discountedPrice,
+    description: "Ad subscription purchase",
+    reference: planType,
+    transactionId: transactionId,
+  });
+
+  // Credit 80% commission to the admin's wallet
+  const admin = await Admin.findOne(); // Assuming a single admin
+  if (admin) {
+    admin.wallet.balance += price;
+    admin.wallet.transactionHistory.push({
+      type: "credit",
+      credit_type: "advertisement",
+      amount: price,
+      description: "Commission from ad subscription for admin",
+      reference: promoCode,
+      transactionId: transactionId,
+    });
+    await admin.save();
+  }
+
+  // Initialize the subscription details
+  user.adSubscription = {
+    plan: subscriptionPlans._id,
+    isSubscribed: true,
+    isPromoApplied: !!promoCode,
+    promo_code: promoCode || null,
+    category: "advertisement",
+    startDate: new Date(),
+    price: discountedPrice,
+    adsDetails: [],
+    endDate: new Date(), // Initialize endDate here
+  };
+
+  // Set the end date based on the plan type
+  if (planType === "one_month_plan") {
+    user.adSubscription.endDate.setMonth(
+      user.adSubscription.startDate.getMonth() + 1
+    ); // Add 1 month
+  } else if (planType === "one_year_plan") {
+    user.adSubscription.endDate.setFullYear(
+      user.adSubscription.startDate.getFullYear() + 1
+    ); // Add 1 year
+  }
+
+  // Adjust the subscription end date if a promo code is applied
+  if (promoCode) {
+    if (planType === "one_month_plan") {
+      user.adSubscription.endDate.setDate(
+        user.adSubscription.endDate.getDate() + 7
+      ); // Add 7 days for promo
+    } else if (planType === "one_year_plan") {
+      user.adSubscription.endDate.setMonth(
+        user.adSubscription.endDate.getMonth() + 1
+      ); // Add 1 month for promo
+    }
+  }
+
+  user.superNote = 100;
+
+  await user.save();
+
+  return res
+    .status(200)
+    .json(
+      new ApiResponse(
+        200,
+        { subscription: user.adSubscription },
+        "Ad subscription purchased successfully."
+      )
+    );
+});
+
 export {
   loginUser,
   login_verify_OTP,
@@ -452,4 +620,5 @@ export {
   resendOTP,
   addWalletBalance,
   getWalletBalanceByUserId,
+  buyAdSubscription,
 };

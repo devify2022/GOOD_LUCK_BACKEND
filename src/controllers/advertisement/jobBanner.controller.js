@@ -8,18 +8,12 @@ import handleValidationError from "../../utils/validationError.js";
 export const createJobBannerAd = async (req, res, next) => {
   const {
     userId,
+    title,
     city,
     state,
     pincode,
     phone,
     banner_url,
-    is_subscribed,
-    subs_plan,
-    subs_start_date,
-    subs_end_date,
-    transaction_id,
-    is_promoCode_applied,
-    promocode,
     category,
   } = req.body;
 
@@ -30,55 +24,85 @@ export const createJobBannerAd = async (req, res, next) => {
       return res.status(404).json(new ApiResponse(404, null, "User not found"));
     }
 
-    // Step 2: Create the JobBanner ad
+    // Step 2: Check if the user is verified
+    if (!user.isVerified) {
+      return res
+        .status(400)
+        .json(new ApiResponse(400, null, "User is not verified"));
+    }
+
+    // Step 3: Check if the user has an active subscription
+    if (!user.adSubscription || !user.adSubscription.isSubscribed) {
+      return res
+        .status(403)
+        .json(
+          new ApiResponse(
+            403,
+            null,
+            "User does not have an active subscription to create ads"
+          )
+        );
+    }
+
+    // Step 4: Create the JobBanner ad
     const jobBannerAd = await JobBanner.create({
       userId,
+      title,
       city,
       state,
       pincode,
-      phone,
+      phone: phone || user.phone, // Use user's phone if not provided
       banner_url,
-      is_subscribed,
-      subs_plan,
-      subs_start_date,
-      subs_end_date,
-      transaction_id,
-      is_promoCode_applied,
-      promocode,
       category,
     });
 
-    // Step 3: Automatically create the ServiceAd
+    // Step 5: Automatically create the ServiceAd
     const serviceAd = await ServiceAds.create({
       userId,
       jobAdType: "JobBanner",
       job_ad_id: jobBannerAd._id,
-      homeAdType: null, // Adjust as per your logic
+      homeAdType: null,
       home_ads: null,
       generale_ads: null,
     });
 
-    // Step 4: Respond with success
+    // Step 6: Add the ad ID to the user's adSubscription adsDetails
+    user.adSubscription.adsDetails.push({
+      adType: "JobBanner",
+      adId: jobBannerAd._id,
+      details: {
+        title,
+        city,
+        state,
+        pincode,
+        banner_url,
+        category,
+      },
+    });
+
+    // Save the updated user
+    await user.save();
+
+    // Step 7: Respond with success
     res
       .status(201)
       .json(
         new ApiResponse(
           201,
           { jobBannerAd, serviceAd },
-          "JobBanner and ServiceAd created successfully"
+          "JobBanner and ServiceAd created successfully and added to subscription details"
         )
       );
   } catch (error) {
     // Handle validation errors
     if (error.name === "ValidationError") {
-      return res
+      const errors = handleValidationError(error);
+      res
         .status(400)
-        .json(
-          new ApiResponse(400, handleValidationError(error), "Validation error")
-        );
+        .json(new ApiResponse(400, { errors }, "Validation error occurred"));
+    } else {
+      next(error); // Pass other errors to the error handling middleware
     }
-    // Pass other errors to the error handler middleware
-    next(error);
   }
 };
 

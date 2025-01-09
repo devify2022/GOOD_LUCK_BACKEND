@@ -4,6 +4,7 @@ import {
   addWalletBalance,
   auth_request_verify_OTP,
   authRequest,
+  buyAdSubscription,
   getWalletBalanceByUserId,
   login_verify_OTP,
   loginUser,
@@ -18,6 +19,7 @@ router.route("/authRequestVerifyotp").post(auth_request_verify_OTP);
 router.route("/login").post(loginUser);
 router.route("/loginVerifyotp").post(login_verify_OTP);
 router.route("/resend_otp").post(resendOTP);
+router.post('/ads-subscription/buy', buyAdSubscription);
 router.route("/userWallet/addBalance/:userId").patch(addWalletBalance);
 router.get('/wallet-balance/:userId', getWalletBalanceByUserId);
 

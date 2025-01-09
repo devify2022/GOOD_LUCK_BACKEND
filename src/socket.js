@@ -6,9 +6,12 @@ import { MatchedProfileDating } from "./models/dating/matchedProfileDating.model
 import { User } from "./models/auth/user.model.js";
 import { Astrologer } from "./models/astrologer/astroler.model.js";
 import {
+  handleCallRequest,
+  handleCallResponse,
   handleChatMessage,
   handleChatRequest,
   handleChatResponse,
+  handleEndCall,
   handleEndChat,
   handlePauseChat,
   handleResumeChat,
@@ -17,7 +20,7 @@ import {
 export const setupSocketIO = (server) => {
   const io = new Server(server, {
     cors: {
-      origin: ["http://localhost:3000", "http://192.168.29.9:8081"],
+      origin: ["http://localhost:3000", "http://192.168.31.227:8081"],
       methods: ["GET", "POST"],
       allowedHeaders: ["Content-Type"],
       credentials: true,
@@ -231,6 +234,26 @@ export const setupSocketIO = (server) => {
 
       // Call the function to handle the end of the chat, passing the sender
       await handleEndChat(io, roomId, sender);
+    });
+
+    // Handle chat request from user
+    socket.on("call-request", (data) => {
+      // Call the function to handle the chat request
+      handleCallRequest(io, data, socket);
+    });
+
+    // Handle chat request from user
+    socket.on("call-response", (data) => {
+      // Call the function to handle the chat request
+      handleCallResponse(io, data, socket);
+    });
+
+     // Handle chat termination
+     socket.on("end-call", async (data) => {
+      const { roomId, sender } = data; // Extract sender from the data
+
+      // Call the function to handle the end of the chat, passing the sender
+      await handleEndCall(io, roomId, sender);
     });
 
     // Handle user disconnection
