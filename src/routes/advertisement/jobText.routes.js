@@ -10,7 +10,7 @@ import {
 const router = express.Router();
 
 // Route to create a JobText ad and a corresponding ServiceAd
-router.post("/", createJobTextAd);
+router.post("/create", createJobTextAd);
 
 // Route to get all JobText ads
 router.get("/", getAllJobTextAds);
@@ -19,9 +19,9 @@ router.get("/", getAllJobTextAds);
 router.get("/:userId", getJobTextAdsByUserId);
 
 // Route to update JobText ad by userId
-router.put("/:userId", updateJobTextAdByUserId);
+router.patch("/update/:userId", updateJobTextAdByUserId);
 
 // Route to delete JobText ad by userId
-router.delete("/:userId", deleteJobTextAdByUserId);
+router.delete("/delete/:userId", deleteJobTextAdByUserId);
 
 export default router;

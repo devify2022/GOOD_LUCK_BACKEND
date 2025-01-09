@@ -112,7 +112,7 @@ export const createJobTextAd = async (req, res, next) => {
 // Get all JobText ads
 export const getAllJobTextAds = async (req, res, next) => {
   try {
-    const jobTextAds = await JobText.find().populate("userId");
+    const jobTextAds = await JobText.find();
     res
       .status(200)
       .json(
@@ -127,7 +127,7 @@ export const getAllJobTextAds = async (req, res, next) => {
 export const getJobTextAdsByUserId = async (req, res, next) => {
   const { userId } = req.params;
   try {
-    const jobTextAds = await JobText.find({ userId }).populate("userId");
+    const jobTextAds = await JobText.find({ userId });
     res
       .status(200)
       .json(
