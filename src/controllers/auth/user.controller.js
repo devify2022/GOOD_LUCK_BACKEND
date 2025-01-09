@@ -277,7 +277,7 @@ const login_verify_OTP = asyncHandler(async (req, res) => {
       200,
       {
         userId: userRecord._id,
-        astrologer_id: astrologer ? astrologer._id : null,
+        astrologer: astrologer ? astrologer : null,
         role: authRecord.user_type,
         phone: authRecord.phone,
         accessToken,
@@ -288,6 +288,13 @@ const login_verify_OTP = asyncHandler(async (req, res) => {
           ? matrimonyProfile.subscribed
           : false,
         isDatingSubscribed: datingProfile ? datingProfile.subscribed : false,
+        ads_subsCription: {
+          isSubscribed: userRecord.adSubscription.isSubscribed,
+          StartDate: userRecord.adSubscription.startDate,
+          EndDate: userRecord.adSubscription.endDate,
+          isPromoApplied: userRecord.adSubscription.isPromoApplied,
+          plan: userRecord.adSubscription.price,
+        },
       },
       "OTP Verified"
     )
