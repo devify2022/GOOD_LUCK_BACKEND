@@ -25,6 +25,10 @@ const usersSchema = new Schema(
     date_of_birth: {
       type: String,
     },
+    profile_picture: {
+      type: String,
+      default: "https://i.fbcd.co/products/resized/resized-750-500/d4c961732ba6ec52c0bbde63c9cb9e5dd6593826ee788080599f68920224e27d.jpg",
+    },
     phone: {
       type: String,
       required: [true, "Phone number is required"],

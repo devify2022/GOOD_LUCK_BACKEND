@@ -1,3 +1,4 @@
+import moment from "moment-timezone";
 import { Astrologer } from "../../../models/astrologer/astroler.model.js";
 import { User } from "../../../models/auth/user.model.js";
 import { ChatRequest } from "../../../models/chatRequest/chatRequest.model.js";
@@ -159,38 +160,95 @@ export async function handleChatResponse(io, data) {
   }
 }
 
+// // Function to handle saving and broadcasting chat messages
+// export const handleChatMessage = async (data, io) => {
+//   const { roomId, message, senderId, senderModel, duration } = data;
+
+//   // Validate senderModel
+//   if (!["User", "Astrologer"].includes(senderModel)) {
+//     return { error: "Invalid sender model" };
+//   }
+
+//   try {
+//     // Find or create the chat room
+//     let chat = await AstrologerChat.findOne({ roomId });
+
+//     if (!chat) {
+//       chat = new AstrologerChat({ roomId, messages: [], duration });
+//     }
+
+//     // Add the new message to the messages array
+//     const newMessage = {
+//       senderId,
+//       senderModel,
+//       message,
+//     };
+//     chat.messages.push(newMessage);
+
+//     // Save the updated chat document
+//     await chat.save();
+
+//     // Broadcast the message to the chat room
+//     io.to(roomId).emit("received-message", {
+//       senderId,
+//       senderModel,
+//       message,
+//       timestamp: newMessage.timestamp,
+//       duration,
+//     });
+//     console.log("Message broadcasted to room:", roomId);
+
+//     return { success: true, timestamp: newMessage.timestamp };
+//   } catch (error) {
+//     console.error("Error saving message:", error);
+//     return { error: "Could not save message" };
+//   }
+// };
+
 // Function to handle saving and broadcasting chat messages
 export const handleChatMessage = async (data, io) => {
-  const { roomId, message, senderId, senderModel, duration } = data;
+  const {
+    roomId,
+    message,
+    senderId,
+    senderModel,
+    receiverId,
+    receiverModel,
+    duration,
+  } = data;
 
-  // Validate senderModel
-  if (!["User", "Astrologer"].includes(senderModel)) {
-    return { error: "Invalid sender model" };
+  // Validate sender and receiver models
+  if (
+    !["User", "Astrologer"].includes(senderModel) ||
+    !["User", "Astrologer"].includes(receiverModel)
+  ) {
+    return { error: "Invalid sender or receiver model" };
   }
 
   try {
-    // Find or create the chat room
     let chat = await AstrologerChat.findOne({ roomId });
 
     if (!chat) {
       chat = new AstrologerChat({ roomId, messages: [], duration });
     }
 
-    // Add the new message to the messages array
     const newMessage = {
       senderId,
       senderModel,
+      receiverId,
+      receiverModel,
       message,
+      timestamp: moment().tz("Asia/Kolkata").toDate(),
     };
-    chat.messages.push(newMessage);
 
-    // Save the updated chat document
+    chat.messages.push(newMessage);
     await chat.save();
 
-    // Broadcast the message to the chat room
     io.to(roomId).emit("received-message", {
       senderId,
       senderModel,
+      receiverId,
+      receiverModel,
       message,
       timestamp: newMessage.timestamp,
       duration,
@@ -517,109 +575,98 @@ export const getAstrologerChatHistory = asyncHandler(async (req, res) => {
     );
 });
 
-// Get astrologers chat list for a user
-export const getChatListForUser = asyncHandler(async (req, res) => {
-  const { userId } = req.params;
 
-  if (!userId) {
+// Get chat list for a user or astrologer
+export const getChatList = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+
+  if (!id) {
     return res
       .status(400)
-      .json(new ApiResponse(400, null, "User ID is required."));
+      .json(new ApiResponse(400, null, "User or Astrologer ID is required."));
   }
 
   try {
-    // Find all chats where the user is involved
+    // Find all chats involving the given ID
     const chats = await AstrologerChat.find({
-      "messages.senderId": userId,
-      "messages.senderModel": "User",
-    }).populate("messages.receiverId", "name profilePicture");
+      $or: [{ "messages.senderId": id }, { "messages.receiverId": id }],
+    }).populate("messages.senderId messages.receiverId", "name profilePicture");
 
     if (!chats || chats.length === 0) {
       return res
         .status(404)
+        .json(new ApiResponse(404, null, "No chat history found."));
+    }
+
+    // Determine if the ID belongs to a user or an astrologer
+    const isUser = await User.findById(id);
+    const isAstrologer = await Astrologer.findById(id);
+
+    if (!isUser && !isAstrologer) {
+      return res
+        .status(400)
+        .json(new ApiResponse(400, null, "Invalid ID provided."));
+    }
+
+    // If ID is a user, fetch astrologer details
+    if (isUser) {
+      const astrologerIds = [
+        ...new Set(
+          chats.flatMap((chat) =>
+            chat.messages
+              .filter(
+                (msg) => msg.senderModel === "Astrologer" && msg.senderId !== id
+              )
+              .map((msg) => msg.senderId.toString())
+          )
+        ),
+      ];
+
+      // Fetch astrologer details
+      const astrologers = await Astrologer.find({
+        _id: { $in: astrologerIds },
+      }).select("Fname Lname profile_picture");
+
+      return res
+        .status(200)
         .json(
-          new ApiResponse(404, null, "No chat history found for the user.")
+          new ApiResponse(
+            200,
+            astrologers,
+            "List of astrologers you've chatted with retrieved successfully."
+          )
         );
     }
 
-    // Extract distinct astrologer IDs
-    const astrologerIds = [
-      ...new Set(
-        chats.map(
-          (chat) =>
-            chat.messages.find(
-              (message) => message.senderModel === "Astrologer"
-            )?.senderId
-        )
-      ),
-    ];
+    // If ID is an astrologer, fetch user details
+    if (isAstrologer) {
+      const userIds = [
+        ...new Set(
+          chats.flatMap((chat) =>
+            chat.messages
+              .filter(
+                (msg) => msg.senderModel === "User" && msg.senderId !== id
+              )
+              .map((msg) => msg.senderId.toString())
+          )
+        ),
+      ];
 
-    // Fetch astrologers' details
-    const astrologers = await Astrologer.find({
-      _id: { $in: astrologerIds },
-    }).select("name profilePicture");
+      // Fetch user details
+      const users = await User.find({
+        _id: { $in: userIds },
+      }).select("Fname Lname profile_picture");
 
-    return res
-      .status(200)
-      .json(
-        new ApiResponse(
-          200,
-          astrologers,
-          "List of astrologers the user has chatted with retrieved successfully."
-        )
-      );
-  } catch (error) {
-    res.status(500).json(new ApiResponse(500, null, error.message));
-  }
-});
-
-
-// Get users chat list for an astrologer
-export const getChatListForAstrologer = asyncHandler(async (req, res) => {
-  const { astrologerId } = req.params;
-
-  if (!astrologerId) {
-    return res
-      .status(400)
-      .json(new ApiResponse(400, null, "Astrologer ID is required."));
-  }
-
-  try {
-    // Find all chats where the astrologer is involved
-    const chats = await AstrologerChat.find({
-      "messages.senderId": astrologerId,
-      "messages.senderModel": "Astrologer",
-    }).populate("messages.receiverId", "name profilePicture");
-
-    if (!chats || chats.length === 0) {
       return res
-        .status(404)
-        .json(new ApiResponse(404, null, "No chat history found for the astrologer."));
+        .status(200)
+        .json(
+          new ApiResponse(
+            200,
+            users,
+            "List of users you've chatted with retrieved successfully."
+          )
+        );
     }
-
-    // Extract distinct user IDs
-    const userIds = [
-      ...new Set(
-        chats.map((chat) =>
-          chat.messages.find((message) => message.senderModel === "User")?.senderId
-        )
-      ),
-    ];
-
-    // Fetch users' details
-    const users = await User.find({
-      _id: { $in: userIds },
-    }).select("name profilePicture");
-
-    return res
-      .status(200)
-      .json(
-        new ApiResponse(
-          200,
-          users,
-          "List of users the astrologer has chatted with retrieved successfully."
-        )
-      );
   } catch (error) {
     res.status(500).json(new ApiResponse(500, null, error.message));
   }

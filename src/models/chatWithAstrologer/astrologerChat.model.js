@@ -16,6 +16,16 @@ const astrologerChatSchema = new mongoose.Schema(
           required: true,
           enum: ["User", "Astrologer"], // Specifies which model senderId references
         },
+        receiverId: {
+          type: mongoose.Schema.Types.ObjectId,
+          required: true,
+          refPath: "receiverModel",
+        },
+        receiverModel: {
+          type: String,
+          required: true,
+          enum: ["User", "Astrologer"],
+        },
         message: { type: String, required: true }, // The message content
         timestamp: {
           type: Date,
