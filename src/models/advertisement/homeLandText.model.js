@@ -24,6 +24,10 @@ const homeLandTextSchema = new Schema(
       type: String,
       required: [true, "Pincode is required."],
     },
+    price: {
+      type: String,
+      required: [true, "Price is required."],
+    },
     phone: {
       type: String,
       // required: [true, "Phone number is required"],

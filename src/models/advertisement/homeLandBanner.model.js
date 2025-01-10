@@ -25,6 +25,11 @@ const homeLandBannerSchema = new Schema(
     },
     phone: {
       type: String,
+      required: [true, "Phone is required."],
+    },
+    price: {
+      type: String,
+      required: [true, "Price is required."],
     },
     banner_url: {
       type: String,

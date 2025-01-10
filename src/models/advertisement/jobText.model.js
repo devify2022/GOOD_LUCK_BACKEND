@@ -12,6 +12,21 @@ const jobTextSchema = new Schema(
       type: String,
       required: [true, "Title is required."],
     },
+    company_name: {
+      type: String,
+      // required: [true, "Company name is required."],
+    },
+    work_location: {
+      type: String,
+      required: [true, "Work location name is required."],
+    },
+    website: {
+      type: String,
+    },
+    salary: {
+      type: String,
+      required: [true, "Salary is required."],
+    },
     city: {
       type: String,
       required: [true, "City is required."],
@@ -19,6 +34,10 @@ const jobTextSchema = new Schema(
     state: {
       type: String,
       required: [true, "State is required."],
+    },
+    address: {
+      type: String,
+      required: [true, "Address is required."],
     },
     pincode: {
       type: String,

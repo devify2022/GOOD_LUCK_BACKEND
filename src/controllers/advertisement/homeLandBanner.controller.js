@@ -6,7 +6,7 @@ import handleValidationError from "../../utils/validationError.js";
 
 // Create a HomeBanner ad and a corresponding ServiceAd
 export const createHomeLandBannerAd = async (req, res, next) => {
-  const { userId, title, city, state, pincode, phone, banner_url, category } =
+  const { userId, title, city, state, pincode, phone, price, banner_url, category } =
     req.body;
 
   try {
@@ -44,6 +44,7 @@ export const createHomeLandBannerAd = async (req, res, next) => {
       state,
       pincode,
       phone: phone || user.phone,
+      price,
       banner_url,
       category,
     });
@@ -67,6 +68,8 @@ export const createHomeLandBannerAd = async (req, res, next) => {
         city,
         state,
         pincode,
+        phone: phone || user.phone,
+        price,
         banner_url,
         category,
       },

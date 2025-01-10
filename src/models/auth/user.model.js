@@ -81,6 +81,7 @@ const usersSchema = new Schema(
           },
           details: {
             type: Object,
+            _id: false,
           },
         },
       ],
