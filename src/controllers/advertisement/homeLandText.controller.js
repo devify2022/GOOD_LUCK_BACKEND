@@ -213,6 +213,51 @@ export const getHomeLandTextAdsByUserIdAndCategory = async (req, res, next) => {
   }
 };
 
+// Get all HomeLandText ads by category (Home/Land)
+export const getAllHomeLandTextAdsByCategory = async (req, res, next) => {
+  const { category } = req.params;
+
+  try {
+    // Step 1: Validate category
+    if (!["Home", "Land"].includes(category)) {
+      return res
+        .status(400)
+        .json(
+          new ApiResponse(
+            400,
+            null,
+            "Invalid category. Must be 'Home' or 'Land'."
+          )
+        );
+    }
+
+    // Step 2: Fetch all HomeLandText ads for the given category
+    const textAds = await HomeLandText.find({ category });
+
+    // Step 3: Check if any ads are found
+    if (textAds.length === 0) {
+      return res
+        .status(200)
+        .json(
+          new ApiResponse(200, null, `No ads found for category: ${category}`)
+        );
+    }
+
+    // Step 4: Return the success response with the text ads
+    res
+      .status(200)
+      .json(
+        new ApiResponse(
+          200,
+          textAds,
+          `Fetched all text ads for category: ${category}`
+        )
+      );
+  } catch (error) {
+    next(error);
+  }
+};
+
 // Update HomeText ad by userId
 export const updateHomeLandTextAdByUserId = async (req, res, next) => {
   const { userId } = req.params;

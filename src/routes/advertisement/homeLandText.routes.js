@@ -3,6 +3,7 @@ import {
   createHomeLandTextAd,
   deleteHomeLandTextAdByUserId,
   getAllHomeLandTextAds,
+  getAllHomeLandTextAdsByCategory,
   getHomeLandTextAdsByUserId,
   getHomeLandTextAdsByUserIdAndCategory,
   updateHomeLandTextAdByUserId,
@@ -23,6 +24,12 @@ router.get("/getByUserId/:userId", getHomeLandTextAdsByUserId);
 router.get(
   "/getByCategoryUserId/:userId/:category",
   getHomeLandTextAdsByUserIdAndCategory
+);
+
+// Route to get Home Or Land Text ads by userId nad category
+router.get(
+  "/getByCategory/:category",
+  getAllHomeLandTextAdsByCategory
 );
 
 // Route to update HomeText ad by userId

@@ -168,6 +168,101 @@ export const getJobBannerAdsByUserId = async (req, res, next) => {
   }
 };
 
+// Get JobBanner ads by userId and category
+export const getJobBannerAdsByUserIdAndCategory = async (req, res, next) => {
+  const { userId, category } = req.params;
+
+  try {
+    if (!["Govt", "Private"].includes(category)) {
+      return res
+        .status(400)
+        .json(
+          new ApiResponse(
+            400,
+            null,
+            "Invalid category. Must be 'Govt' or 'Private'."
+          )
+        );
+    }
+
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json(new ApiResponse(404, null, "User not found"));
+    }
+
+    const jobBannerAds = await JobBanner.find({ userId, category });
+
+    if (jobBannerAds.length === 0) {
+      return res
+        .status(200)
+        .json(
+          new ApiResponse(
+            200,
+            null,
+            `No JobBanner ads found for userId: ${userId} and category: ${category}`
+          )
+        );
+    }
+
+    res
+      .status(200)
+      .json(
+        new ApiResponse(
+          200,
+          jobBannerAds,
+          `Fetched JobBanner ads for userId: ${userId} and category: ${category}`
+        )
+      );
+  } catch (error) {
+    next(error);
+  }
+};
+
+// Get all JobBanner ads by category
+export const getAllJobBannerAdsByCategory = async (req, res, next) => {
+  const { category } = req.params;
+
+  try {
+    if (!["Govt", "Private"].includes(category)) {
+      return res
+        .status(400)
+        .json(
+          new ApiResponse(
+            400,
+            null,
+            "Invalid category. Must be 'Govt' or 'Private'."
+          )
+        );
+    }
+
+    const jobBannerAds = await JobBanner.find({ category });
+
+    if (jobBannerAds.length === 0) {
+      return res
+        .status(200)
+        .json(
+          new ApiResponse(
+            200,
+            null,
+            `No JobBanner ads found for category: ${category}`
+          )
+        );
+    }
+
+    res
+      .status(200)
+      .json(
+        new ApiResponse(
+          200,
+          jobBannerAds,
+          `Fetched all JobBanner ads for category: ${category}`
+        )
+      );
+  } catch (error) {
+    next(error);
+  }
+};
+
 // Update JobBanner ad by userId
 export const updateJobBannerAdByUserId = async (req, res, next) => {
   const { userId } = req.params;

@@ -157,6 +157,110 @@ export const getJobTextAdsByUserId = async (req, res, next) => {
   }
 };
 
+// Get JobText ads by userId and category (Govt/Private)
+export const getJobTextAdsByUserIdAndCategory = async (req, res, next) => {
+  const { userId, category } = req.params;
+
+  try {
+    // Step 1: Validate category
+    if (!["Govt", "Private"].includes(category)) {
+      return res
+        .status(400)
+        .json(
+          new ApiResponse(
+            400,
+            null,
+            "Invalid category. Must be 'Govt' or 'Private'."
+          )
+        );
+    }
+
+    // Step 2: Check if the user exists
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json(new ApiResponse(404, null, "User not found"));
+    }
+
+    // Step 3: Fetch JobText ads for the user and category
+    const jobTextAds = await JobText.find({ userId, category });
+
+    // Step 4: Check if any ads are found
+    if (jobTextAds.length === 0) {
+      return res
+        .status(200)
+        .json(
+          new ApiResponse(
+            200,
+            null,
+            `No JobText ads found for userId: ${userId} and category: ${category}`
+          )
+        );
+    }
+
+    // Step 5: Return the ads if found
+    res
+      .status(200)
+      .json(
+        new ApiResponse(
+          200,
+          jobTextAds,
+          `Fetched JobText ads for userId: ${userId} and category: ${category}`
+        )
+      );
+  } catch (error) {
+    next(error);
+  }
+};
+
+// Get all JobText ads by category (Govt/Private)
+export const getAllJobTextAdsByCategory = async (req, res, next) => {
+  const { category } = req.params;
+
+  try {
+    // Step 1: Validate category
+    if (!["Govt", "Private"].includes(category)) {
+      return res
+        .status(400)
+        .json(
+          new ApiResponse(
+            400,
+            null,
+            "Invalid category. Must be 'Govt' or 'Private'."
+          )
+        );
+    }
+
+    // Step 2: Fetch all JobText ads for the category
+    const jobTextAds = await JobText.find({ category });
+
+    // Step 3: Check if any ads are found
+    if (jobTextAds.length === 0) {
+      return res
+        .status(200)
+        .json(
+          new ApiResponse(
+            200,
+            null,
+            `No JobText ads found for category: ${category}`
+          )
+        );
+    }
+
+    // Step 4: Return the ads if found
+    res
+      .status(200)
+      .json(
+        new ApiResponse(
+          200,
+          jobTextAds,
+          `Fetched all JobText ads for category: ${category}`
+        )
+      );
+  } catch (error) {
+    next(error);
+  }
+};
+
 // Update JobText ad by userId
 export const updateJobTextAdByUserId = async (req, res, next) => {
   const { userId } = req.params;

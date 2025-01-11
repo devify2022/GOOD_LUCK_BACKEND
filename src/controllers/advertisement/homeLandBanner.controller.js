@@ -6,8 +6,17 @@ import handleValidationError from "../../utils/validationError.js";
 
 // Create a HomeBanner ad and a corresponding ServiceAd
 export const createHomeLandBannerAd = async (req, res, next) => {
-  const { userId, title, city, state, pincode, phone, price, banner_url, category } =
-    req.body;
+  const {
+    userId,
+    title,
+    city,
+    state,
+    pincode,
+    phone,
+    price,
+    banner_url,
+    category,
+  } = req.body;
 
   try {
     // Step 1: Find the user by userId
@@ -198,6 +207,51 @@ export const getHomeLandBannerAdsByUserIdAndCategory = async (
           200,
           homeLandBannerAds,
           `Fetched ads for userId: ${userId} and category: ${category}`
+        )
+      );
+  } catch (error) {
+    next(error);
+  }
+};
+
+// Get all HomeLandBanner ads by category (Home/Land)
+export const getAllHomeLandBannersByCategory = async (req, res, next) => {
+  const { category } = req.params;
+
+  try {
+    // Step 1: Validate category
+    if (!["Home", "Land"].includes(category)) {
+      return res
+        .status(400)
+        .json(
+          new ApiResponse(
+            400,
+            null,
+            "Invalid category. Must be 'Home' or 'Land'."
+          )
+        );
+    }
+
+    // Step 2: Fetch all HomeLandBanner ads for the given category
+    const banners = await HomeLandBanner.find({ category });
+
+    // Step 3: Check if any ads are found
+    if (banners.length === 0) {
+      return res
+        .status(200)
+        .json(
+          new ApiResponse(200, null, `No ads found for category: ${category}`)
+        );
+    }
+
+    // Step 4: Return the success response with the banners
+    res
+      .status(200)
+      .json(
+        new ApiResponse(
+          200,
+          banners,
+          `Fetched all ads for category: ${category}`
         )
       );
   } catch (error) {

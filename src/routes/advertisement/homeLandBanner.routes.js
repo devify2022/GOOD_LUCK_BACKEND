@@ -1,5 +1,5 @@
 import express from "express";
-import { createHomeLandBannerAd, deleteHomeLandBannerAdByUserId, getAllHomeLandBannerAds, getHomeLandBannerAdsByUserId, getHomeLandBannerAdsByUserIdAndCategory, updateHomeLandBannerAdByUserId } from "../../controllers/advertisement/homeLandBanner.controller.js";
+import { createHomeLandBannerAd, deleteHomeLandBannerAdByUserId, getAllHomeLandBannerAds, getAllHomeLandBannersByCategory, getHomeLandBannerAdsByUserId, getHomeLandBannerAdsByUserIdAndCategory, updateHomeLandBannerAdByUserId } from "../../controllers/advertisement/homeLandBanner.controller.js";
 
 const router = express.Router();
 
@@ -14,6 +14,9 @@ router.get("/getByUserId/:userId", getHomeLandBannerAdsByUserId);
 
 // Route to get HomeBanner Or LandBanner ads by userId nad category
 router.get("/getByCategoryUserId/:userId/:category", getHomeLandBannerAdsByUserIdAndCategory);
+
+// Route to get HomeBanner Or LandBanner ads by userId nad category
+router.get("/getByCategory/:category", getAllHomeLandBannersByCategory);
 
 // Route to update HomeBanner ad by userId
 router.patch("/update/:userId", updateHomeLandBannerAdByUserId);

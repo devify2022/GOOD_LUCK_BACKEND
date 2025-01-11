@@ -3,7 +3,9 @@ import {
   createJobTextAd,
   deleteJobTextAdByUserId,
   getAllJobTextAds,
+  getAllJobTextAdsByCategory,
   getJobTextAdsByUserId,
+  getJobTextAdsByUserIdAndCategory,
   updateJobTextAdByUserId,
 } from "../../controllers/advertisement/jobText.controller.js";
 
@@ -17,6 +19,12 @@ router.get("/", getAllJobTextAds);
 
 // Route to get JobText ads by userId
 router.get("/:userId", getJobTextAdsByUserId);
+
+// Route to get JobText ads by userId and category
+router.get("/getJobTextAdsByUserIdAndCategory/:userId/:category", getJobTextAdsByUserIdAndCategory);
+
+// Route to get JobText ads by Category
+router.get("/getAllJobTextAdsByCategory/:category", getAllJobTextAdsByCategory);
 
 // Route to update JobText ad by userId
 router.patch("/update/:userId", updateJobTextAdByUserId);

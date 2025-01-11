@@ -3,7 +3,9 @@ import {
   createJobBannerAd,
   deleteJobBannerAdByUserId,
   getAllJobBannerAds,
+  getAllJobBannerAdsByCategory,
   getJobBannerAdsByUserId,
+  getJobBannerAdsByUserIdAndCategory,
   updateJobBannerAdByUserId,
 } from "../../controllers/advertisement/jobBanner.controller.js";
 
@@ -17,6 +19,12 @@ router.get("/getAll", getAllJobBannerAds);
 
 // Route to get JobBanner ads by userId
 router.get("/getByUserId/:userId", getJobBannerAdsByUserId);
+
+// Route to get JobBanner ads by userId and category
+router.get("/getJobBannerAdsByUserIdAndCategory/:userId/:category", getJobBannerAdsByUserIdAndCategory);
+
+// Route to get JobBanner ads by Category
+router.get("/getJobBannerAdsByCategory/:category", getAllJobBannerAdsByCategory);
 
 // Route to update JobBanner ad by userId
 router.patch("/update/:userId", updateJobBannerAdByUserId);
