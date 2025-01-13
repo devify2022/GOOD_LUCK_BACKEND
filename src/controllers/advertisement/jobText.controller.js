@@ -128,10 +128,15 @@ export const createJobTextAd = async (req, res, next) => {
 export const getAllJobTextAds = async (req, res, next) => {
   try {
     const jobTextAds = await JobText.find();
+
     res
       .status(200)
       .json(
-        new ApiResponse(200, jobTextAds, "Fetched all JobText ads successfully")
+        new ApiResponse(
+          200,
+          jobTextAds.length > 0 ? jobTextAds : [],
+          "Fetched all JobText ads successfully"
+        )
       );
   } catch (error) {
     next(error);

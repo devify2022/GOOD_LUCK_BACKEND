@@ -120,7 +120,11 @@ export const getAllHomeLandTextAds = async (req, res, next) => {
     res
       .status(200)
       .json(
-        new ApiResponse(200, homeLandTextAds, "Fetched all ads successfully")
+        new ApiResponse(
+          200,
+          homeLandTextAds.length > 0 ? homeLandTextAds : [],
+          "Fetched all ads successfully"
+        )
       );
   } catch (error) {
     next(error);

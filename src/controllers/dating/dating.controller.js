@@ -109,8 +109,8 @@ export const getAllDatingProfiles = asyncHandler(async (req, res) => {
 
     if (!datingProfiles.length) {
       return res
-        .status(404)
-        .json(new ApiResponse(404, null, "No dating profiles found"));
+        .status(200)
+        .json(new ApiResponse(200, [], "No dating profiles found"));
     }
 
     res

@@ -58,8 +58,8 @@ export const getAllCategories = asyncHandler(async (req, res) => {
 
     if (!categories || categories.length === 0) {
       return res
-        .status(404)
-        .json(new ApiResponse(404, null, "No product categories found"));
+        .status(200)
+        .json(new ApiResponse(200, [], "No product categories found"));
     }
 
     return res

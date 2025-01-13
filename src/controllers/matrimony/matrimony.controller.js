@@ -114,8 +114,8 @@ export const getAllMatrimonyProfile = asyncHandler(async (req, res) => {
 
   if (!matrimonyProfiles.length) {
     return res
-      .status(404)
-      .json(new ApiResponse(404, null, "No matrimony profiles found"));
+      .status(200)
+      .json(new ApiResponse(200, [], "No matrimony profiles found"));
   }
 
   return res

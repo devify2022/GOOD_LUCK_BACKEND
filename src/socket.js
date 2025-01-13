@@ -236,7 +236,7 @@ export const setupSocketIO = (server) => {
       await handleEndChat(io, roomId, sender);
     });
 
-    // Handle chat request from user
+    // Handle call request from user
     socket.on("call-request", (data) => {
       // Call the function to handle the chat request
       handleCallRequest(io, data, socket);

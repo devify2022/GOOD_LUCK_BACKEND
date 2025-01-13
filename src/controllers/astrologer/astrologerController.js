@@ -155,8 +155,8 @@ export const getAllPendingRequests = asyncHandler(async (req, res) => {
   });
   if (pendingRequests.length === 0) {
     return res
-      .status(404)
-      .json(new ApiResponse(404, null, "No pending astrologers"));
+      .status(200)
+      .json(new ApiResponse(200, [], "No pending astrologers"));
   }
   return res
     .status(200)
@@ -200,8 +200,8 @@ export const getAllRejectedRequests = asyncHandler(async (req, res) => {
 
   if (rejectedRequests.length === 0) {
     return res
-      .status(404)
-      .json(new ApiResponse(404, null, "No rejected astrologers"));
+      .status(200)
+      .json(new ApiResponse(200, [], "No rejected astrologers"));
   }
   return res
     .status(200)
@@ -245,7 +245,9 @@ export const getAllAstrologers = asyncHandler(async (req, res) => {
     const astrologers = await Astrologer.find();
 
     if (astrologers.length === 0) {
-      throw new ApiError(404, "No astrologers found");
+      return res
+        .status(200)
+        .json(new ApiResponse(200, [], "No astrologers found"));
     }
 
     return res
@@ -452,8 +454,8 @@ export const getAllUpdateRequestAstrologers = asyncHandler(async (req, res) => {
 
   if (updateRequests.length === 0) {
     return res
-      .status(404)
-      .json(new ApiResponse(404, null, "No update request astrologers found"));
+      .status(200)
+      .json(new ApiResponse(200, [], "No update request astrologers found"));
   }
 
   return res

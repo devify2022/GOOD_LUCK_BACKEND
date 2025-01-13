@@ -22,8 +22,8 @@ export const getMatchesByUserId = asyncHandler(async (req, res) => {
 
   if (!matches || matches.length === 0) {
     return res
-      .status(404)
-      .json(new ApiResponse(404, null, "No matches found for this user"));
+      .status(200)
+      .json(new ApiResponse(200, [], "No matches found for this user"));
   }
 
   // Fetch data from Dating collection and the last message from Chat

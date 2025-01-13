@@ -149,8 +149,8 @@ export const getAllOrders = asyncHandler(async (req, res) => {
 
     if (!orders || orders.length === 0) {
       return res
-        .status(404)
-        .json(new ApiResponse(404, null, "No orders found"));
+        .status(200)
+        .json(new ApiResponse(200, null, "No orders found"));
     }
 
     return res

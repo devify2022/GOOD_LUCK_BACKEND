@@ -7,7 +7,6 @@ import mongoose from "mongoose";
 
 // Create Product
 export const createProduct = asyncHandler(async (req, res) => {
-  console.log("Hello");
   try {
     const {
       productName,
@@ -94,8 +93,8 @@ export const getAllProducts = asyncHandler(async (req, res) => {
 
     if (!products || products.length === 0) {
       return res
-        .status(404)
-        .json(new ApiResponse(404, null, "No products found"));
+        .status(200)
+        .json(new ApiResponse(200, [], "No products found"));
     }
 
     return res
