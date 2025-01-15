@@ -14,6 +14,8 @@ import { generateTransactionId } from "../../utils/generateTNX.js";
 import { Astrologer } from "../../models/astrologer/astroler.model.js";
 import { AdSubscription } from "../../models/subscription/adSubcription.model.js";
 import AffiliateMarketer from "../../models/affiliateMarketer/affiliateMarketer.model.js";
+import { sendOTP } from "../../utils/sendOtp.js";
+import { validateOTP } from "../../utils/validateOtp.js";
 
 // Helper to generate access and refresh tokens
 const generateAccessAndRefreshToken = async (authId) => {
@@ -35,7 +37,7 @@ const generateAccessAndRefreshToken = async (authId) => {
   }
 };
 
-// Login or Register User and send OTP
+// Register User and send OTP
 const authRequest = asyncHandler(async (req, res) => {
   const {
     phone,
@@ -49,7 +51,9 @@ const authRequest = asyncHandler(async (req, res) => {
   } = req.body;
 
   if (!phone) {
-    throw new ApiError(400, "Phone number is required");
+    return res
+      .status(400)
+      .json(new ApiResponse(400, null, "Phone number is required"));
   }
 
   let role;
@@ -63,11 +67,10 @@ const authRequest = asyncHandler(async (req, res) => {
 
   let authRecord = await Auth.findOne({ phone });
   let authRequest = await AuthRequest.findOne({ phone });
+
   if (!authRecord && !authRequest) {
     authRequest = new AuthRequest({
       phone,
-      otp: generateOtp(),
-      otpExpiresAt: Date.now() + 5 * 60 * 1000,
       Fname: Fname || "",
       Lname: Lname || "",
       gender: gender || "Others",
@@ -79,10 +82,15 @@ const authRequest = asyncHandler(async (req, res) => {
       user_type: role,
     });
     await authRequest.save();
-  } else {
-    const newOtp = generateOtp();
-    authRequest.setOtp(newOtp);
-    await authRequest.save();
+  }
+
+  // Call sendOTP function here
+  const otpResponse = await sendOTP(phone);
+
+  if (!otpResponse) {
+    return res
+      .status(500)
+      .json(new ApiResponse(500, otpResponse.data, "Failed to send OTP"));
   }
 
   return res
@@ -90,7 +98,7 @@ const authRequest = asyncHandler(async (req, res) => {
     .json(
       new ApiResponse(
         200,
-        { role, otp: authRequest.otp },
+        { role, phone, otpData: otpResponse.data },
         "OTP sent successfully"
       )
     );
@@ -98,20 +106,24 @@ const authRequest = asyncHandler(async (req, res) => {
 
 // Verify New User OTP
 const auth_request_verify_OTP = asyncHandler(async (req, res) => {
-  const { phone, otp } = req.body;
+  const { phone, otp, verificationId } = req.body;
 
   if (!phone || !otp) {
-    throw new ApiError(400, "Phone number and OTP are required");
+    return res
+      .status(400)
+      .json(new ApiResponse(400, null, "Phone number and OTP are required"));
   }
 
   const authRequestRecord = await AuthRequest.findOne({ phone });
   if (!authRequestRecord) {
-    throw new ApiError(404, "User not found");
+    return res.status(404).json(new ApiResponse(404, null, "User not found"));
   }
 
-  const isOtpValid = authRequestRecord.verifyOtp(otp);
-  if (!isOtpValid) {
-    throw new ApiError(400, "Invalid OTP");
+  // Use validateOTP function to check the OTP
+  const otpValidationResponse = await validateOTP(phone, verificationId, otp);
+
+  if (!otpValidationResponse.success) {
+    return res.status(400).json(new ApiResponse(400, otpValidationResponse.data, "Invalid OTP"));
   }
 
   const newAuth = new Auth({
@@ -195,26 +207,35 @@ const loginUser = asyncHandler(async (req, res) => {
   const astrologer = await Astrologer.findOne({ phone });
 
   if (!authRecord) {
-    throw new ApiError(404, "User does not exist");
+    return res
+      .status(404)
+      .json(new ApiResponse(404, null, "User does not exist"));
   }
 
+  // Generate a new OTP
   const newOtp = generateOtp();
 
+  // Update the OTP and expiration in the database
   await Auth.findOneAndUpdate(
     { phone },
     {
       $set: {
         otp: newOtp,
-        otpExpiresAt: Date.now() + 5 * 60 * 1000,
+        otpExpiresAt: Date.now() + 5 * 60 * 1000, // OTP valid for 5 minutes
         isVerified: false,
         refreshToken: "",
       },
     },
-    {
-      new: true,
-    }
+    { new: true }
   );
-  // console.log(authRecord)
+
+  // Send OTP using the `sendOTP` function
+  const otpResponse = await sendOTP(phone);
+  if (!otpResponse) {
+    return res
+      .status(500)
+      .json(new ApiResponse(500, otpResponse.data, "Failed to send OTP"));
+  }
 
   const { accessToken, refreshToken } = await generateAccessAndRefreshToken(
     authRecord._id
@@ -229,7 +250,7 @@ const loginUser = asyncHandler(async (req, res) => {
         role: authRecord.user_type,
         accessToken,
         refreshToken,
-        otp: newOtp,
+        otpData: otpResponse.data, // Optionally return the OTP in development mode for testing
       },
       "OTP sent successfully"
     )
@@ -238,31 +259,35 @@ const loginUser = asyncHandler(async (req, res) => {
 
 // Verify Existing User OTP
 const login_verify_OTP = asyncHandler(async (req, res) => {
-  const { phone, otp } = req.body;
+  const { phone, otp, verificationId } = req.body;
 
   if (!phone || !otp) {
-    throw new ApiError(400, "Phone number and OTP are required");
+    return res
+      .status(400)
+      .json(new ApiResponse(400, null, "Phone number and OTP are required"));
   }
 
   const authRecord = await Auth.findOne({ phone });
   const userRecord = await User.findOne({ phone });
   const astrologer = await Astrologer.findOne({ phone });
+
   if (!authRecord) {
-    throw new ApiError(404, "User not found");
+    return res.status(404).json(new ApiResponse(404, null, "User not found"));
   }
 
-  if (authRecord.otp !== otp) {
-    throw new ApiError(400, "Invalid OTP");
-  }
-
-  if (authRecord.otpExpiresAt < Date.now()) {
-    throw new ApiError(400, "OTP has expired");
+  // Use the `validateOTP` function to validate the OTP
+  const otpValidationResponse = await validateOTP(phone, verificationId, otp);
+  if (!otpValidationResponse.success) {
+    return res
+      .status(201)
+      .json(new ApiResponse(201, otpValidationResponse.data, "Invalid OTP"));
   }
 
   const { accessToken, refreshToken } = await generateAccessAndRefreshToken(
     authRecord._id
   );
 
+  // Mark the user as verified and clear OTP-related fields
   authRecord.isVerified = true;
   authRecord.otp = "";
   authRecord.otpExpiresAt = null;
@@ -343,30 +368,52 @@ const resendOTP = asyncHandler(async (req, res) => {
   const { phone } = req.body;
 
   if (!phone) {
-    throw new ApiError(400, "Phone number is required");
+    return res
+      .status(400)
+      .json(new ApiResponse(400, null, "Phone number is required"));
   }
 
+  // Rate limit check
   const { allowed, remainingTime } = checkRateLimit(phone);
   if (!allowed) {
-    throw new ApiError(
-      429,
-      `Too many requests. Try again in ${Math.ceil(remainingTime / 60000)} minutes.`
-    );
+    return res
+      .status(429)
+      .json(
+        new ApiResponse(
+          429,
+          null,
+          `Too many requests. Try again in ${Math.ceil(remainingTime / 60000)} minutes.`
+        )
+      );
   }
 
+  // Check if the user exists
   let user = await User.findOne({ phone });
   if (!user) {
-    throw new ApiError(400, "Invalid phone number");
+    return res
+      .status(400)
+      .json(new ApiResponse(400, null, "Invalid phone number"));
   }
 
+  // Generate a new OTP
   const newOtp = generateOtp();
+
+  // Update the user's OTP and verification status in the database
   user.otp = newOtp;
   user.isVerified = false;
   await user.save();
 
+  // Send the OTP using the `sendOTP` function
+  const otpResponse = await sendOTP(phone);
+  if (!otpResponse) {
+    return res
+      .status(500)
+      .json(new ApiResponse(500, otpResponse.data, "Failed to resend OTP"));
+  }
+
   return res
     .status(200)
-    .json(new ApiResponse(200, newOtp, "OTP Sent Successfully"));
+    .json(new ApiResponse(200, otpResponse.data, "OTP sent successfully"));
 });
 
 // Logout User
