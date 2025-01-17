@@ -52,6 +52,24 @@ export const setupSocketIO = (server) => {
             console.log(
               `User registered: ${userId} with socket ID: ${socket.id}`
             );
+
+            // If not found in the User model, check in the Dating model
+            const datingUser = await Dating.findOneAndUpdate(
+              { userId },
+              { socketId: socket.id }, // Update the socketId
+              { new: true }
+            );
+
+            if (!datingUser) {
+              return socket.emit("error", {
+                message: "User not found in Dating model.",
+              });
+            }
+
+            activeUsers.set(userId, socket.id); // Track active dating users
+            console.log(
+              `Dating user registered: ${userId} with socket ID: ${socket.id}`
+            );
             return;
           } else {
             return socket.emit("error", {
@@ -59,24 +77,6 @@ export const setupSocketIO = (server) => {
             });
           }
         }
-
-        // If not found in the User model, check in the Dating model
-        const datingUser = await Dating.findOneAndUpdate(
-          { userId },
-          { socketId: socket.id }, // Update the socketId
-          { new: true }
-        );
-
-        if (!datingUser) {
-          return socket.emit("error", {
-            message: "User not found in Dating model.",
-          });
-        }
-
-        activeUsers.set(userId, socket.id); // Track active dating users
-        console.log(
-          `Dating user registered: ${userId} with socket ID: ${socket.id}`
-        );
       } catch (error) {
         console.error("Error updating socketId:", error);
         socket.emit("error", { message: "Error registering user." });
@@ -248,8 +248,8 @@ export const setupSocketIO = (server) => {
       handleCallResponse(io, data, socket);
     });
 
-     // Handle chat termination
-     socket.on("end-call", async (data) => {
+    // Handle chat termination
+    socket.on("end-call", async (data) => {
       const { roomId, sender } = data; // Extract sender from the data
 
       // Call the function to handle the end of the chat, passing the sender
