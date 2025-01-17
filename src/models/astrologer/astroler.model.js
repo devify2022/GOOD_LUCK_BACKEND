@@ -1,5 +1,7 @@
 import mongoose, { Schema } from "mongoose";
 import walletSchema from "../wallet/wallet.model.js";
+import { validatePhoneNumber } from "../../utils/validatePhoneNumber.js";
+import reviewSchema from "./review.model.js";
 
 const astrologerSchema = new Schema(
   {
@@ -32,7 +34,7 @@ const astrologerSchema = new Schema(
       required: [true, "Phone Number is required"],
       validate: {
         validator: function (v) {
-          return /^(\+\d{1,3}[- ]?)?\d{10}$/.test(v); // Regex for international or 10-digit phone number
+          return validatePhoneNumber(v); // Use the validatePhoneNumber function
         },
         message: (props) => `${props.value} is not a valid phone number!`,
       },
@@ -41,10 +43,7 @@ const astrologerSchema = new Schema(
       type: [String],
       required: [true, "Specialisation is required"],
     },
-    rating: {
-      type: Number,
-      default: 2,
-    },
+    reviews: [reviewSchema],
     total_number_service_provide: {
       type: Number,
       default: 0,

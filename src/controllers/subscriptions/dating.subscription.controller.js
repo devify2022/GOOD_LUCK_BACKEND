@@ -1,9 +1,9 @@
-import { AdSubscription } from "../../models/subscription/adSubcription.model.js";
+import { DatingSubscription } from "../../models/subscription/dating.subscription.js";
 import { ApiResponse } from "../../utils/apiResponse.js";
 import { asyncHandler } from "../../utils/asyncHandler.js";
 
 // POST API to update one_year_plan and one_month_plan prices
-export const createAdSubscription = asyncHandler(async (req, res) => {
+export const createDatingSubscription = asyncHandler(async (req, res) => {
   const { one_month_plan, one_year_plan } = req.body;
 
   // Validate input
@@ -14,11 +14,11 @@ export const createAdSubscription = asyncHandler(async (req, res) => {
   }
 
   // Find the AdSubscription (assuming a single document in the collection)
-  let subscription = await AdSubscription.findOne();
+  let subscription = await DatingSubscription.findOne();
 
   // If no AdSubscription exists, create a new one
   if (!subscription) {
-    subscription = new AdSubscription({});
+    subscription = new DatingSubscription({});
   }
 
   // Update the prices
@@ -40,10 +40,10 @@ export const createAdSubscription = asyncHandler(async (req, res) => {
     );
 });
 
-// GET API to fetch subscription prices
-export const getAdSubscription = asyncHandler(async (req, res) => {
-  // Find the AdSubscription (assuming a single document in the collection)
-  const subscription = await AdSubscription.findOne();
+// GET API to fetch dating subscription prices
+export const getDatingSubscription = asyncHandler(async (req, res) => {
+  // Find the DatingSubscription (assuming a single document in the collection)
+  const subscription = await DatingSubscription.findOne();
 
   // Check if a subscription document exists
   if (!subscription) {
@@ -65,7 +65,7 @@ export const getAdSubscription = asyncHandler(async (req, res) => {
 });
 
 // Function to update Ad subscription prices
-export const updateAdSubscriptions = asyncHandler(async (req, res) => {
+export const updateDatingSubscription = asyncHandler(async (req, res) => {
   const { subscriptionId, one_month_plan, one_year_plan } = req.body;
 
   // Validate input
@@ -87,7 +87,7 @@ export const updateAdSubscriptions = asyncHandler(async (req, res) => {
   if (one_year_plan !== undefined) updateData.one_year_plan = one_year_plan;
 
   // Find the AdSubscription by ID and update it
-  const subscription = await AdSubscription.findByIdAndUpdate(
+  const subscription = await DatingSubscription.findByIdAndUpdate(
     subscriptionId,
     updateData,
     { new: true, runValidators: true }
@@ -111,7 +111,7 @@ export const updateAdSubscriptions = asyncHandler(async (req, res) => {
 });
 
 // Function to delete an Ad subscription
-export const deleteAdSubscription = asyncHandler(async (req, res) => {
+export const deleteDatingSubscription = asyncHandler(async (req, res) => {
   const { subscriptionId } = req.params;
 
   // Validate input
@@ -122,7 +122,8 @@ export const deleteAdSubscription = asyncHandler(async (req, res) => {
   }
 
   // Find the AdSubscription by ID and delete it
-  const subscription = await AdSubscription.findByIdAndDelete(subscriptionId);
+  const subscription =
+    await DatingSubscription.findByIdAndDelete(subscriptionId);
 
   if (!subscription) {
     return res

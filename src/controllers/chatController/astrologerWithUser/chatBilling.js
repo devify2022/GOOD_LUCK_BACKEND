@@ -1,6 +1,8 @@
+import moment from "moment-timezone";
 import { Admin } from "../../../models/admin/admin.model.js";
 import { Astrologer } from "../../../models/astrologer/astroler.model.js";
 import { User } from "../../../models/auth/user.model.js";
+import { ChatRequest } from "../../../models/chatRequest/chatRequest.model.js";
 import { generateTransactionId } from "../../../utils/generateTNX.js";
 
 // Global intervals object to keep track of active intervals
@@ -69,6 +71,7 @@ async function creditAstrologerAndAdmin(astrologer, admin, totalCost, roomId) {
   await admin.save();
 }
 
+// Start chat billing
 export async function startChat(io, roomId, chatType, userId, astrologerId) {
   try {
     const astrologer = await Astrologer.findById(astrologerId);
@@ -104,6 +107,12 @@ export async function startChat(io, roomId, chatType, userId, astrologerId) {
     }
 
     await creditAstrologerAndAdmin(astrologer, admin, costPerMinute, roomId);
+    // Record the start time
+    const chatRequest = await ChatRequest.findOne({ roomId });
+    if (chatRequest) {
+      chatRequest.startTime = moment().format("DD-MM-YYYY hh:mm A");
+      await chatRequest.save();
+    }
 
     let totalTime = 1;
 
@@ -163,11 +172,19 @@ export async function startChat(io, roomId, chatType, userId, astrologerId) {
 }
 
 // End chat billing
-export function endChat(io, roomId, sender) {
+export async function endChat(io, roomId, sender) {
   if (intervals[roomId]) {
     clearInterval(intervals[roomId]); // Stop the timer
     delete intervals[roomId];
   }
+
+   // Record the end time
+   const chatRequest = await ChatRequest.findOne({ roomId });
+   if (chatRequest) {
+     chatRequest.endTime = moment().format("DD-MM-YYYY hh:mm A");
+     await chatRequest.save();
+   }
+ 
 
   // Emit a notification to both user and astrologer
   io.to(roomId).emit("chat-end", {

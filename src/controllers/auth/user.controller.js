@@ -16,6 +16,9 @@ import { AdSubscription } from "../../models/subscription/adSubcription.model.js
 import AffiliateMarketer from "../../models/affiliateMarketer/affiliateMarketer.model.js";
 import { sendOTP } from "../../utils/sendOtp.js";
 import { validateOTP } from "../../utils/validateOtp.js";
+import { validatePhoneNumber } from "../../utils/validatePhoneNumber.js";
+import { MatrimonySubscription } from "../../models/subscription/matrimony.subscription.js";
+import { DatingSubscription } from "../../models/subscription/dating.subscription.js";
 
 // Helper to generate access and refresh tokens
 const generateAccessAndRefreshToken = async (authId) => {
@@ -39,69 +42,86 @@ const generateAccessAndRefreshToken = async (authId) => {
 
 // Register User and send OTP
 const authRequest = asyncHandler(async (req, res) => {
-  const {
-    phone,
-    Fname,
-    Lname,
-    gender,
-    date_of_birth,
-    isAstrologer,
-    isAffiliate_marketer,
-    isAdmin,
-  } = req.body;
-
-  if (!phone) {
-    return res
-      .status(400)
-      .json(new ApiResponse(400, null, "Phone number is required"));
-  }
-
-  let role;
-  if (!isAstrologer && !isAffiliate_marketer && !isAdmin) {
-    role = "user";
-  } else {
-    if (isAstrologer) role = "astrologer";
-    else if (isAffiliate_marketer) role = "affiliate_marketer";
-    else if (isAdmin) role = "admin";
-  }
-
-  let authRecord = await Auth.findOne({ phone });
-  let authRequest = await AuthRequest.findOne({ phone });
-
-  if (!authRecord && !authRequest) {
-    authRequest = new AuthRequest({
+  try {
+    const {
       phone,
-      Fname: Fname || "",
-      Lname: Lname || "",
-      gender: gender || "Others",
-      date_of_birth: date_of_birth || "1900-01-01",
-      isVerified: false,
-      isAstrologer: role === "astrologer",
-      isAffiliate_marketer: role === "affiliate_marketer",
-      isAdmin: role === "admin",
-      user_type: role,
-    });
-    await authRequest.save();
-  }
+      Fname,
+      Lname,
+      gender,
+      date_of_birth,
+      isAstrologer,
+      isAffiliate_marketer,
+      isAdmin,
+    } = req.body;
 
-  // Call sendOTP function here
-  const otpResponse = await sendOTP(phone);
+    if (!phone) {
+      return res
+        .status(400)
+        .json(new ApiResponse(400, null, "Phone number is required"));
+    }
 
-  if (!otpResponse) {
+    let role;
+    if (!isAstrologer && !isAffiliate_marketer && !isAdmin) {
+      role = "user";
+    } else {
+      if (isAstrologer) role = "astrologer";
+      else if (isAffiliate_marketer) role = "affiliate_marketer";
+      else if (isAdmin) role = "admin";
+    }
+
+    let authRecord = await Auth.findOne({ phone });
+    let authRequest = await AuthRequest.findOne({ phone });
+
+    if (!authRecord && !authRequest) {
+      authRequest = new AuthRequest({
+        phone,
+        Fname: Fname || "",
+        Lname: Lname || "",
+        gender: gender || "Others",
+        date_of_birth: date_of_birth || "1900-01-01",
+        isVerified: false,
+        isAstrologer: role === "astrologer",
+        isAffiliate_marketer: role === "affiliate_marketer",
+        isAdmin: role === "admin",
+        user_type: role,
+      });
+
+      // Try saving the document
+      await authRequest.save();
+    }
+
+    // Call sendOTP function here
+    const otpResponse = await sendOTP(phone);
+
+    if (!otpResponse) {
+      return res
+        .status(500)
+        .json(new ApiResponse(500, otpResponse.data, "Failed to send OTP"));
+    }
+
+    return res
+      .status(200)
+      .json(
+        new ApiResponse(
+          200,
+          { role, phone, otpData: otpResponse.data },
+          "OTP sent successfully"
+        )
+      );
+  } catch (error) {
+    if (error.name === "ValidationError") {
+      // Handle Mongoose validation errors
+      const errors = Object.values(error.errors).map((err) => err.message);
+      return res
+        .status(400)
+        .json(new ApiResponse(400, null, `${errors.join(", ")}`));
+    }
+
+    // Catch any other errors
     return res
       .status(500)
-      .json(new ApiResponse(500, otpResponse.data, "Failed to send OTP"));
+      .json(new ApiResponse(500, null, "An unexpected error occurred"));
   }
-
-  return res
-    .status(200)
-    .json(
-      new ApiResponse(
-        200,
-        { role, phone, otpData: otpResponse.data },
-        "OTP sent successfully"
-      )
-    );
 });
 
 // Verify New User OTP
@@ -123,7 +143,9 @@ const auth_request_verify_OTP = asyncHandler(async (req, res) => {
   const otpValidationResponse = await validateOTP(phone, verificationId, otp);
 
   if (!otpValidationResponse.success) {
-    return res.status(400).json(new ApiResponse(400, otpValidationResponse.data, "Invalid OTP"));
+    return res
+      .status(400)
+      .json(new ApiResponse(400, otpValidationResponse.data, "Invalid OTP"));
   }
 
   const newAuth = new Auth({
@@ -196,134 +218,182 @@ const auth_request_verify_OTP = asyncHandler(async (req, res) => {
 
 // Login User
 const loginUser = asyncHandler(async (req, res) => {
-  const { phone } = req.body;
+  try {
+    const { phone } = req.body;
 
-  if (!phone) {
-    throw new ApiError(400, "Phone number is required");
-  }
+    if (!phone) {
+      throw new ApiError(400, "Phone number is required");
+    }
 
-  const authRecord = await Auth.findOne({ phone });
-  const userRecord = await User.findOne({ phone });
-  const astrologer = await Astrologer.findOne({ phone });
+    // Check if the phone number is valid
+    if (!validatePhoneNumber(phone)) {
+      return res
+        .status(400)
+        .json(new ApiResponse(400, null, "Invalid phone number format"));
+    }
 
-  if (!authRecord) {
-    return res
-      .status(404)
-      .json(new ApiResponse(404, null, "User does not exist"));
-  }
+    const authRecord = await Auth.findOne({ phone });
+    const userRecord = await User.findOne({ phone });
+    const astrologer = await Astrologer.findOne({ phone });
 
-  // Generate a new OTP
-  const newOtp = generateOtp();
+    if (!authRecord) {
+      return res
+        .status(404)
+        .json(new ApiResponse(404, null, "User does not exist"));
+    }
 
-  // Update the OTP and expiration in the database
-  await Auth.findOneAndUpdate(
-    { phone },
-    {
-      $set: {
-        otp: newOtp,
-        otpExpiresAt: Date.now() + 5 * 60 * 1000, // OTP valid for 5 minutes
-        isVerified: false,
-        refreshToken: "",
+    // Generate a new OTP
+    const newOtp = generateOtp();
+
+    // Update the OTP and expiration in the database
+    await Auth.findOneAndUpdate(
+      { phone },
+      {
+        $set: {
+          otp: newOtp,
+          otpExpiresAt: Date.now() + 5 * 60 * 1000, // OTP valid for 5 minutes
+          isVerified: false,
+          refreshToken: "",
+        },
       },
-    },
-    { new: true }
-  );
+      { new: true }
+    );
 
-  // Send OTP using the `sendOTP` function
-  const otpResponse = await sendOTP(phone);
-  if (!otpResponse) {
+    // Send OTP using the `sendOTP` function
+    const otpResponse = await sendOTP(phone);
+    if (!otpResponse) {
+      return res
+        .status(500)
+        .json(new ApiResponse(500, otpResponse.data, "Failed to send OTP"));
+    }
+
+    // Generate tokens
+    const { accessToken, refreshToken } = await generateAccessAndRefreshToken(
+      authRecord._id
+    );
+
+    return res.status(200).json(
+      new ApiResponse(
+        200,
+        {
+          userId: userRecord ? userRecord._id : null,
+          astrologer_id: astrologer ? astrologer._id : null,
+          role: authRecord.user_type,
+          accessToken,
+          refreshToken,
+          otpData: otpResponse.data, // Optionally return OTP data for testing
+        },
+        "OTP sent successfully"
+      )
+    );
+  } catch (error) {
+    // Handle validation errors
+    if (error.name === "ValidationError") {
+      const errors = Object.values(error.errors).map((err) => err.message);
+      return res
+        .status(400)
+        .json(
+          new ApiResponse(400, null, `Validation error: ${errors.join(", ")}`)
+        );
+    }
+
+    // Catch any other unexpected errors
     return res
       .status(500)
-      .json(new ApiResponse(500, otpResponse.data, "Failed to send OTP"));
+      .json(new ApiResponse(500, null, "An unexpected error occurred"));
   }
-
-  const { accessToken, refreshToken } = await generateAccessAndRefreshToken(
-    authRecord._id
-  );
-
-  return res.status(200).json(
-    new ApiResponse(
-      200,
-      {
-        userId: userRecord._id,
-        astrologer_id: astrologer ? astrologer._id : null,
-        role: authRecord.user_type,
-        accessToken,
-        refreshToken,
-        otpData: otpResponse.data, // Optionally return the OTP in development mode for testing
-      },
-      "OTP sent successfully"
-    )
-  );
 });
 
 // Verify Existing User OTP
 const login_verify_OTP = asyncHandler(async (req, res) => {
-  const { phone, otp, verificationId } = req.body;
+  try {
+    const { phone, otp, verificationId } = req.body;
 
-  if (!phone || !otp) {
-    return res
-      .status(400)
-      .json(new ApiResponse(400, null, "Phone number and OTP are required"));
-  }
+    // Check if phone and OTP are provided
+    if (!phone || !otp) {
+      return res
+        .status(400)
+        .json(new ApiResponse(400, null, "Phone number and OTP are required"));
+    }
 
-  const authRecord = await Auth.findOne({ phone });
-  const userRecord = await User.findOne({ phone });
-  const astrologer = await Astrologer.findOne({ phone });
+    // Validate phone number format
+    if (!validatePhoneNumber(phone)) {
+      return res
+        .status(400)
+        .json(new ApiResponse(400, null, "Invalid phone number format"));
+    }
 
-  if (!authRecord) {
-    return res.status(404).json(new ApiResponse(404, null, "User not found"));
-  }
+    // Fetch user records
+    const authRecord = await Auth.findOne({ phone });
+    if (!authRecord) {
+      return res.status(404).json(new ApiResponse(404, null, "User not found"));
+    }
 
-  // Use the `validateOTP` function to validate the OTP
-  const otpValidationResponse = await validateOTP(phone, verificationId, otp);
-  if (!otpValidationResponse.success) {
-    return res
-      .status(201)
-      .json(new ApiResponse(201, otpValidationResponse.data, "Invalid OTP"));
-  }
+    const userRecord = await User.findOne({ phone });
+    const astrologer = await Astrologer.findOne({ phone });
 
-  const { accessToken, refreshToken } = await generateAccessAndRefreshToken(
-    authRecord._id
-  );
+    // Validate the OTP using the `validateOTP` function
+    const otpValidationResponse = await validateOTP(phone, verificationId, otp);
+    if (!otpValidationResponse.success) {
+      return res
+        .status(201)
+        .json(new ApiResponse(201, otpValidationResponse.data, "Invalid OTP"));
+    }
 
-  // Mark the user as verified and clear OTP-related fields
-  authRecord.isVerified = true;
-  authRecord.otp = "";
-  authRecord.otpExpiresAt = null;
-  await authRecord.save();
+    // Generate access and refresh tokens
+    const { accessToken, refreshToken } = await generateAccessAndRefreshToken(
+      authRecord._id
+    );
 
-  // Fetch Matrimony and Dating profile IDs if they exist
-  const matrimonyProfile = await Matrimony.findOne({ authId: authRecord._id });
-  const datingProfile = await Dating.findOne({ authId: authRecord._id });
+    // Mark the user as verified and clear OTP-related fields
+    authRecord.isVerified = true;
+    authRecord.otp = "";
+    authRecord.otpExpiresAt = null;
+    await authRecord.save();
 
-  return res.status(200).json(
-    new ApiResponse(
-      200,
-      {
-        userId: userRecord._id,
-        astrologer: astrologer ? astrologer : null,
-        role: authRecord.user_type,
-        phone: authRecord.phone,
-        accessToken,
-        refreshToken,
-        matrimonyID: matrimonyProfile ? matrimonyProfile.userId : null,
-        datingID: datingProfile ? datingProfile.userId : null,
-        isMatrimonySubscribed: matrimonyProfile
-          ? matrimonyProfile.subscribed
-          : false,
-        isDatingSubscribed: datingProfile ? datingProfile.subscribed : false,
-        ads_subsCription: {
-          isSubscribed: userRecord.adSubscription.isSubscribed,
-          StartDate: userRecord.adSubscription.startDate,
-          EndDate: userRecord.adSubscription.endDate,
-          isPromoApplied: userRecord.adSubscription.isPromoApplied,
-          plan: userRecord.adSubscription.price,
+    // Fetch Matrimony and Dating profile IDs if they exist
+    const matrimonyProfile = await Matrimony.findOne({
+      authId: authRecord._id,
+    });
+    const datingProfile = await Dating.findOne({ authId: authRecord._id });
+
+    // Send response with user data
+    return res.status(200).json(
+      new ApiResponse(
+        200,
+        {
+          userId: userRecord?._id,
+          astrologer: astrologer || null,
+          role: authRecord.user_type,
+          phone: authRecord.phone,
+          accessToken,
+          refreshToken,
+          matrimonyID: matrimonyProfile ? matrimonyProfile.userId : null,
+          datingID: datingProfile ? datingProfile.userId : null,
+          isMatrimonySubscribed: matrimonyProfile
+            ? matrimonyProfile.subscribed
+            : false,
+          isDatingSubscribed: datingProfile ? datingProfile.subscribed : false,
+          ads_subsCription: userRecord?.adSubscription
+            ? {
+                isSubscribed: userRecord.adSubscription.isSubscribed,
+                StartDate: userRecord.adSubscription.startDate,
+                EndDate: userRecord.adSubscription.endDate,
+                isPromoApplied: userRecord.adSubscription.isPromoApplied,
+                plan: userRecord.adSubscription.price,
+              }
+            : null,
         },
-      },
-      "OTP Verified"
-    )
-  );
+        "OTP Verified"
+      )
+    );
+  } catch (error) {
+    // Handle unexpected errors
+    console.error("Error in login_verify_OTP:", error.message || error);
+    return res
+      .status(500)
+      .json(new ApiResponse(500, null, "An unexpected error occurred"));
+  }
 });
 
 // Refresh Access Token
@@ -371,6 +441,13 @@ const resendOTP = asyncHandler(async (req, res) => {
     return res
       .status(400)
       .json(new ApiResponse(400, null, "Phone number is required"));
+  }
+
+  // Validate phone number format
+  if (!validatePhoneNumber(phone)) {
+    return res
+      .status(400)
+      .json(new ApiResponse(400, null, "Invalid phone number format"));
   }
 
   // Rate limit check
@@ -476,26 +553,146 @@ const addWalletBalance = asyncHandler(async (req, res) => {
 
 // Get wallet balance by user ID
 const getWalletBalanceByUserId = asyncHandler(async (req, res) => {
-  const { userId } = req.params;
+  try {
+    const { userId } = req.params;
 
-  // Find the user by ID
-  const user = await User.findById(userId);
-  if (!user) {
-    return res.status(404).json(new ApiResponse(404, null, "User not found"));
+    // Find the user by ID
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json(new ApiResponse(404, null, "User not found"));
+    }
+
+    // Get the wallet balance
+    const walletBalance = user.wallet.balance;
+
+    return res
+      .status(200)
+      .json(
+        new ApiResponse(
+          200,
+          { balance: walletBalance },
+          "Wallet balance retrieved successfully"
+        )
+      );
+  } catch (error) {
+    console.error("Error fetching wallet balance:", error);
+    return res
+      .status(500)
+      .json(
+        new ApiResponse(
+          500,
+          null,
+          "An error occurred while retrieving the wallet balance"
+        )
+      );
   }
+});
 
-  // Get the wallet balance
-  const walletBalance = user.wallet.balance;
+// Get transaction history by user ID
+const getTransactionHistoryByUserId = asyncHandler(async (req, res) => {
+  try {
+    const { userId } = req.params;
 
-  return res
-    .status(200)
-    .json(
-      new ApiResponse(
-        200,
-        { balance: walletBalance },
-        "Wallet balance retrieved successfully"
-      )
+    // Find the user by ID and select the transaction history
+    const user = await User.findById(userId)
+      .select("wallet.transactionHistory")
+      .lean();
+
+    if (!user) {
+      return res.status(404).json(new ApiResponse(404, null, "User not found"));
+    }
+
+    // Retrieve transaction history
+    const transactionHistory = user.wallet?.transactionHistory || [];
+
+    return res
+      .status(200)
+      .json(
+        new ApiResponse(
+          200,
+          { transactionHistory },
+          "Transaction history retrieved successfully"
+        )
+      );
+  } catch (error) {
+    console.error("Error fetching transaction history:", error);
+    return res
+      .status(500)
+      .json(
+        new ApiResponse(
+          500,
+          null,
+          "An error occurred while retrieving transaction history"
+        )
+      );
+  }
+});
+
+// Get user profile details by ID
+const getUserProfileDetailsById = asyncHandler(async (req, res) => {
+  try {
+    const { userId } = req.params;
+
+    // Find the user by ID
+    const user = await User.findById(userId).select(
+      "authId Fname Lname gender date_of_birth profile_picture phone last_login services isVerified isActive isAdmin"
     );
+
+    if (!user) {
+      return res.status(404).json(new ApiResponse(404, null, "User not found"));
+    }
+
+    return res
+      .status(200)
+      .json(
+        new ApiResponse(
+          200,
+          user,
+          "User profile details retrieved successfully"
+        )
+      );
+  } catch (error) {
+    console.error("Error fetching user profile details:", error);
+    return res
+      .status(500)
+      .json(
+        new ApiResponse(
+          500,
+          null,
+          "An error occurred while retrieving user profile details"
+        )
+      );
+  }
+});
+
+// Update user profile or wallet by user ID
+const updateUserById = asyncHandler(async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const updateData = req.body;
+
+    // Find and update the user by ID
+    const updatedUser = await User.findByIdAndUpdate(
+      userId,
+      { $set: updateData }, // Update the fields in the request body
+      { new: true, runValidators: true } // Return updated document and run validations
+    ).lean();
+
+    if (!updatedUser) {
+      return res.status(404).json(new ApiResponse(404, null, "User not found"));
+    }
+
+    return res
+      .status(200)
+      .json(new ApiResponse(200, updatedUser, "User updated successfully"));
+  } catch (error) {
+    console.error("Error updating user:", error);
+    return res
+      .status(500)
+      .json(
+        new ApiResponse(500, null, "An error occurred while updating the user")
+      );
+  }
 });
 
 // Buy Ad Subscription
@@ -664,6 +861,234 @@ const buyAdSubscription = asyncHandler(async (req, res) => {
     );
 });
 
+// Buy Matrimony Subscription
+const buyMatrimonySubscription = asyncHandler(async (req, res) => {
+  const { userId, planType, transactionId } = req.body;
+
+  if (!userId || !planType) {
+    throw new ApiError(400, "User ID and plan type are required.");
+  }
+
+  // Fetch the user
+  const user = await User.findById(userId);
+  if (!user) {
+    throw new ApiError(404, "User not found.");
+  }
+
+  // Fetch subscription plans
+  const subscriptionPlans = await MatrimonySubscription.findOne();
+  if (!subscriptionPlans) {
+    throw new ApiError(404, "Subscription plans not found.");
+  }
+
+  // Determine the price based on the planType
+  const price =
+    planType === "one_month_plan"
+      ? subscriptionPlans.one_month_plan
+      : planType === "one_year_plan"
+        ? subscriptionPlans.one_year_plan
+        : null;
+
+  if (price === null) {
+    throw new ApiError(400, "Invalid plan type.");
+  }
+
+  user.wallet.transactionHistory.push({
+    type: "debit",
+    debit_type: "matrimony",
+    amount: price,
+    description: "Matrimony subscription purchase",
+    reference: planType,
+    transactionId: transactionId,
+  });
+
+  // Set the matrimony subscription details
+  user.matrimonySubscription = {
+    plan: subscriptionPlans._id,
+    isSubscribed: true,
+    category: planType === "one_month_plan" ? "1 month" : "1 year",
+    startDate: new Date(),
+    endDate: new Date(),
+    price: price,
+  };
+
+  // Calculate the end date
+  if (planType === "one_month_plan") {
+    user.matrimonySubscription.endDate.setMonth(
+      user.matrimonySubscription.startDate.getMonth() + 1
+    );
+  } else if (planType === "one_year_plan") {
+    user.matrimonySubscription.endDate.setFullYear(
+      user.matrimonySubscription.startDate.getFullYear() + 1
+    );
+  }
+
+  await user.save();
+
+  res
+    .status(200)
+    .json(
+      new ApiResponse(
+        200,
+        { subscription: user.matrimonySubscription },
+        "Matrimony subscription purchased successfully."
+      )
+    );
+});
+
+// Buy Dating Subscription
+const buyDatingSubscription = asyncHandler(async (req, res) => {
+  const { userId, planType, transactionId } = req.body;
+
+  if (!userId || !planType) {
+    throw new ApiError(400, "User ID and plan type are required.");
+  }
+
+  // Fetch the user
+  const user = await User.findById(userId);
+  if (!user) {
+    throw new ApiError(404, "User not found.");
+  }
+
+  // Fetch subscription plans
+  const subscriptionPlans = await DatingSubscription.findOne();
+  if (!subscriptionPlans) {
+    throw new ApiError(404, "Subscription plans not found.");
+  }
+
+  // Determine the price based on the planType
+  const price =
+    planType === "one_month_plan"
+      ? subscriptionPlans.one_month_plan
+      : planType === "one_year_plan"
+        ? subscriptionPlans.one_year_plan
+        : null;
+
+  if (price === null) {
+    throw new ApiError(400, "Invalid plan type.");
+  }
+
+  user.wallet.transactionHistory.push({
+    type: "debit",
+    debit_type: "dating",
+    amount: price,
+    description: "Dating subscription purchase",
+    reference: planType,
+    transactionId: transactionId,
+  });
+
+  // Set the matrimony subscription details
+  user.datingSubscription = {
+    plan: subscriptionPlans._id,
+    isSubscribed: true,
+    category: planType === "one_month_plan" ? "1 month" : "1 year",
+    startDate: new Date(),
+    endDate: new Date(),
+    price: price,
+  };
+
+  // Calculate the end date
+  if (planType === "one_month_plan") {
+    user.datingSubscription.endDate.setMonth(
+      user.datingSubscription.startDate.getMonth() + 1
+    );
+  } else if (planType === "one_year_plan") {
+    user.datingSubscription.endDate.setFullYear(
+      user.datingSubscription.startDate.getFullYear() + 1
+    );
+  }
+
+  await user.save();
+
+  console.log(user.datingSubscription);
+
+  res
+    .status(200)
+    .json(
+      new ApiResponse(
+        200,
+        { subscription: user.datingSubscription }, // Correct the field here to 'datingSubscription'
+        "Dating subscription purchased successfully."
+      )
+    );
+});
+
+
+// Get astrologers and reviews by user ID
+const getAstrologersAndReviewsByUserId = asyncHandler(async (req, res) => {
+  try {
+    const { userId } = req.params; // User ID from params
+
+    // Validate userId
+    if (!userId) {
+      return res
+        .status(400)
+        .json(new ApiResponse(400, null, "User ID is required"));
+    }
+
+    // Find astrologers reviewed by the user
+    const astrologers = await Astrologer.find(
+      { "reviews.userId": userId }, // Filter astrologers with reviews by the given user ID
+      {
+        name: 1, // Include astrologer name
+        specialization: 1, // Include specialization
+        Fname: 1, // Include first name
+        Lname: 1, // Include last name
+        language: 1, // Include languages
+        profile_picture: 1, // Include profile picture
+        years_of_experience: 1, // Include years of experience
+        reviews: 1, // Include reviews
+      }
+    ).lean();
+
+    // Filter only the reviews provided by this user
+    const result = astrologers.map((astrologer) => {
+      const userReviews = astrologer.reviews.filter(
+        (review) => review.userId.toString() === userId
+      );
+
+      return {
+        astrologerId: astrologer._id,
+        astrologerName: astrologer.name,
+        specialization: astrologer.specialization,
+        Fname: astrologer.Fname,
+        Lname: astrologer.Lname,
+        language: astrologer.language,
+        profile_picture: astrologer.profile_picture,
+        years_of_experience: astrologer.years_of_experience,
+        reviews: userReviews,
+      };
+    });
+
+    if (result.length === 0) {
+      return res
+        .status(200)
+        .json(new ApiResponse(200, [], "No reviews found by this user"));
+    }
+
+    return res
+      .status(200)
+      .json(
+        new ApiResponse(
+          200,
+          result,
+          "Astrologers and reviews retrieved successfully"
+        )
+      );
+  } catch (error) {
+    console.error("Error fetching astrologers and reviews:", error);
+    return res
+      .status(500)
+      .json(
+        new ApiResponse(
+          500,
+          null,
+          "An error occurred while fetching astrologers and reviews"
+        )
+      );
+  }
+});
+
 export {
   loginUser,
   login_verify_OTP,
@@ -675,4 +1100,10 @@ export {
   addWalletBalance,
   getWalletBalanceByUserId,
   buyAdSubscription,
+  getUserProfileDetailsById,
+  getTransactionHistoryByUserId,
+  updateUserById,
+  getAstrologersAndReviewsByUserId,
+  buyMatrimonySubscription,
+  buyDatingSubscription
 };

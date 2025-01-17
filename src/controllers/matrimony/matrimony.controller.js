@@ -17,9 +17,6 @@ export const createMatrimonyProfile = asyncHandler(async (req, res) => {
     gender,
     salary,
     age,
-    subscribed,
-    subs_plan_name,
-    subs_start_date,
     bio,
     isDivorce,
     cast,
@@ -33,6 +30,16 @@ export const createMatrimonyProfile = asyncHandler(async (req, res) => {
 
   if (!existsUser) {
     return res.status(404).json(new ApiResponse(404, null, "User not found"));
+  }
+
+  // Check if the user has an active matrimony subscription
+  const { matrimonySubscription } = existsUser;
+  const currentDate = new Date();
+
+  if (!matrimonySubscription || !matrimonySubscription.isSubscribed || matrimonySubscription.endDate < currentDate) {
+    return res.status(403).json(
+      new ApiResponse(403, null, "User must have an active matrimony subscription to create a matrimony profile")
+    );
   }
 
   const existingMatrimonyProfile = await Matrimony.findOne({ userId: id });
@@ -58,16 +65,14 @@ export const createMatrimonyProfile = asyncHandler(async (req, res) => {
         salary,
         age,
         gender,
-        subscribed,
-        subs_plan_name,
-        subs_start_date,
         bio,
         isDivorce,
         cast,
         interests,
         searching_for,
         facebookLink,
-        whatsappNumber,
+        whatsappNumber: whatsappNumber || existsUser.phone,
+        isVerified: true,
       });
 
       await newMatrimonyProfile.save();
@@ -107,6 +112,7 @@ export const createMatrimonyProfile = asyncHandler(async (req, res) => {
       );
   }
 });
+
 
 // Get all Matrimony Profiles
 export const getAllMatrimonyProfile = asyncHandler(async (req, res) => {

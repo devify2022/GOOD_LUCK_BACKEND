@@ -769,3 +769,100 @@ export const getWalletBalanceById = asyncHandler(async (req, res) => {
       )
     );
 });
+
+// Add a review to an astrologer
+export const giveReviewToAstrologer = asyncHandler(async (req, res) => {
+  try {
+    const { id } = req.params; // Astrologer ID
+    const { userId, rating, comment } = req.body; // Review details
+
+    // Validate inputs
+    if (!userId || !rating || !comment) {
+      return res
+        .status(400)
+        .json(new ApiResponse(400, null, "All fields are required"));
+    }
+
+    if (rating < 1 || rating > 5) {
+      return res
+        .status(400)
+        .json(new ApiResponse(400, null, "Rating must be between 1 and 5"));
+    }
+
+    // Find the astrologer by ID
+    const astrologer = await Astrologer.findById(id);
+    if (!astrologer) {
+      return res
+        .status(404)
+        .json(new ApiResponse(404, null, "Astrologer not found"));
+    }
+
+    // Add the review to the astrologer's reviews array
+    const newReview = {
+      userId,
+      rating,
+      comment,
+    };
+
+    astrologer.reviews.push(newReview);
+    await astrologer.save();
+
+    return res
+      .status(200)
+      .json(new ApiResponse(200, newReview, "Review added successfully"));
+  } catch (error) {
+    console.error("Error adding review:", error);
+    return res
+      .status(500)
+      .json(
+        new ApiResponse(500, null, "An error occurred while adding the review")
+      );
+  }
+});
+
+// Get all reviews for an astrologer by their ID
+export const getAllReviewsByAstrologerId = asyncHandler(async (req, res) => {
+  try {
+    const { id } = req.params; // Astrologer ID
+
+    // Validate ID
+    if (!id) {
+      return res
+        .status(400)
+        .json(new ApiResponse(400, null, "Astrologer ID is required"));
+    }
+
+    // Find the astrologer by ID and populate reviews
+    const astrologer = await Astrologer.findById(id, "reviews").lean();
+
+    if (!astrologer) {
+      return res
+        .status(404)
+        .json(new ApiResponse(404, null, "Astrologer not found"));
+    }
+
+    // Check if there are no reviews
+    if (!astrologer.reviews || astrologer.reviews.length === 0) {
+      return res
+        .status(200)
+        .json(new ApiResponse(200, [], "No reviews found for this astrologer"));
+    }
+
+    return res
+      .status(200)
+      .json(
+        new ApiResponse(
+          200,
+          astrologer.reviews,
+          "Reviews retrieved successfully"
+        )
+      );
+  } catch (error) {
+    console.error("Error retrieving reviews:", error);
+    return res
+      .status(500)
+      .json(
+        new ApiResponse(500, null, "An error occurred while fetching reviews")
+      );
+  }
+});

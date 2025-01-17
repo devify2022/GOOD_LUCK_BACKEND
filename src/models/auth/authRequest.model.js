@@ -1,4 +1,5 @@
 import mongoose, { Schema } from "mongoose";
+import { validatePhoneNumber } from "../../utils/validatePhoneNumber.js";
 
 const authRequestSchema = new Schema(
   {
@@ -21,7 +22,13 @@ const authRequestSchema = new Schema(
     },
     phone: {
       type: String,
-      // required: [true, "Phone Number is required"],
+      required: [true, "Phone Number is required"],
+      validate: {
+        validator: function (v) {
+          return validatePhoneNumber(v); // Use the validatePhoneNumber function
+        },
+        message: (props) => `${props.value} is not a valid phone number!`,
+      },
     },
     last_login: {
       type: String,

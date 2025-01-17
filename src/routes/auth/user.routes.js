@@ -5,11 +5,17 @@ import {
   auth_request_verify_OTP,
   authRequest,
   buyAdSubscription,
+  buyDatingSubscription,
+  buyMatrimonySubscription,
+  getAstrologersAndReviewsByUserId,
+  getTransactionHistoryByUserId,
+  getUserProfileDetailsById,
   getWalletBalanceByUserId,
   login_verify_OTP,
   loginUser,
   refreshAccessToken,
   resendOTP,
+  updateUserById,
 } from "../../controllers/auth/user.controller.js";
 import { verifyJWT } from "./../../middlewares/auth.middleware.js";
 const router = Router();
@@ -20,8 +26,14 @@ router.route("/login").post(loginUser);
 router.route("/loginVerifyotp").post(login_verify_OTP);
 router.route("/resend_otp").post(resendOTP);
 router.post('/ads-subscription/buy', buyAdSubscription);
+router.post('/matrimony-subscription/buy', buyMatrimonySubscription);
+router.post('/dating-subscription/buy', buyDatingSubscription);
 router.route("/userWallet/addBalance/:userId").patch(addWalletBalance);
 router.get('/wallet-balance/:userId', getWalletBalanceByUserId);
+router.get('/transaction-history/:userId', getTransactionHistoryByUserId);
+router.get('/profile/:userId', getUserProfileDetailsById);
+router.patch('/update-profile/:userId', updateUserById);
+router.get('/get-astrologers-reviews/:userId', getAstrologersAndReviewsByUserId);
 
 // secure routes
 // router.route("/logout").post(verifyJWT, logoutUser);

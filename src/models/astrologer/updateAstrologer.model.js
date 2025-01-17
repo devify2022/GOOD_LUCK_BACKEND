@@ -1,4 +1,5 @@
 import mongoose, { Schema } from "mongoose";
+import { validatePhoneNumber } from "../../utils/validatePhoneNumber.js";
 
 // Schema for Astrologer Profile Update Request
 const updateRequestAstrologerProfileSchema = new Schema(
@@ -14,7 +15,7 @@ const updateRequestAstrologerProfileSchema = new Schema(
       required: [true, "Phone Number is required"],
       validate: {
         validator: function (v) {
-          return /^(\+\d{1,3}[- ]?)?\d{10}$/.test(v); // Regex for international or 10-digit phone number
+          return validatePhoneNumber(v); // Use the validatePhoneNumber function
         },
         message: (props) => `${props.value} is not a valid phone number!`,
       },

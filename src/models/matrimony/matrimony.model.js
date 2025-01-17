@@ -41,16 +41,6 @@ const matrimonySchema = new Schema(
       required: [true, "Age is required"],
       min: [18, "Minimum age is 18"],
     },
-    subscribed: {
-      type: Boolean,
-      default: false,
-    },
-    subs_plan_name: {
-      type: String,
-    },
-    subs_start_date: {
-      type: Date,
-    },
     bio: {
       type: String,
     },
@@ -106,6 +96,10 @@ const matrimonySchema = new Schema(
       type: String,
       required: true,
     },
+    isVerified: {
+      type: Boolean,
+      default: false
+    }
   },
   { timestamps: true }
 );

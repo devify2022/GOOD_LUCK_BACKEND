@@ -21,6 +21,8 @@ const chatRequestSchema = new Schema(
       required: true,
     },
     roomId: { type: String },
+    startTime: { type: String }, // Changed to String
+    endTime: { type: String },
   },
   { timestamps: true }
 );

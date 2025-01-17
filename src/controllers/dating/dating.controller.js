@@ -16,11 +16,9 @@ export const createDatingProfile = asyncHandler(async (req, res) => {
       Lname, // Add Lname
       photos,
       city,
+      phone,
       state,
       age,
-      subscribed,
-      subs_plan_name,
-      subs_start_date,
       bio,
       smoker,
       alcoholic,
@@ -29,11 +27,31 @@ export const createDatingProfile = asyncHandler(async (req, res) => {
       interests,
       looking_for,
     } = req.body;
-    console.log(req.body);
+
     const existsUser = await User.findById(id);
 
     if (!existsUser) {
       return res.status(404).json(new ApiResponse(404, null, "User not found"));
+    }
+
+    // Check if the user has an active matrimony subscription
+    const { datingSubscription } = existsUser;
+    const currentDate = new Date();
+
+    if (
+      !datingSubscription ||
+      !datingSubscription.isSubscribed ||
+      datingSubscription.endDate < currentDate
+    ) {
+      return res
+        .status(403)
+        .json(
+          new ApiResponse(
+            403,
+            null,
+            "User must have an active dating subscription to create a dating profile"
+          )
+        );
     }
 
     const existingDatingProfile = await Dating.findOne({ userId: id });
@@ -53,12 +71,10 @@ export const createDatingProfile = asyncHandler(async (req, res) => {
         Fname, // Add Fname
         Lname, // Add Lname
         photos,
+        phone: existsUser.phone || phone,
         city,
         age,
         state,
-        subscribed,
-        subs_plan_name,
-        subs_start_date,
         bio,
         smoker,
         alcoholic,
@@ -66,6 +82,7 @@ export const createDatingProfile = asyncHandler(async (req, res) => {
         orientation,
         interests,
         looking_for,
+        isVerified: true,
       });
       // console.log(newDatingProfile);
 

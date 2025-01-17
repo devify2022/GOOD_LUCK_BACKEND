@@ -1,4 +1,5 @@
 import mongoose, { Schema } from "mongoose";
+import { validatePhoneNumber } from "../../utils/validatePhoneNumber.js";
 
 const datingSchema = new Schema(
   {
@@ -29,13 +30,15 @@ const datingSchema = new Schema(
       required: [true, "Age is required"],
       min: [18, "Minimum age is 18"],
     },
-    photos: {
-      type: [String],
-      required: [true, "Photo is required"],
-    },
-    subscribed: {
-      type: Boolean,
-      default: false,
+    phone: {
+      type: String,
+      required: [true, "Phone Number is required"],
+      validate: {
+        validator: function (v) {
+          return validatePhoneNumber(v); // Use the validatePhoneNumber function
+        },
+        message: (props) => `${props.value} is not a valid phone number!`,
+      },
     },
     city: {
       type: String,
@@ -44,12 +47,6 @@ const datingSchema = new Schema(
     state: {
       type: String,
       required: [true, "State is required"],
-    },
-    subs_plan_name: {
-      type: String,
-    },
-    subs_start_date: {
-      type: Date,
     },
     bio: {
       type: String,
@@ -111,6 +108,10 @@ const datingSchema = new Schema(
       enum: ["male", "female", "both"],
       required: true,
     },
+    isVerified: {
+      type: Boolean,
+      default: false
+    }
   },
   { timestamps: true }
 );
