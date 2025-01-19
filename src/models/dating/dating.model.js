@@ -111,6 +111,10 @@ const datingSchema = new Schema(
     isVerified: {
       type: Boolean,
       default: false
+    },
+    see_limit: {
+      type: Boolean,
+      default: false
     }
   },
   { timestamps: true }

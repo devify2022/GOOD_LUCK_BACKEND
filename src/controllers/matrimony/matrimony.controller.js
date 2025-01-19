@@ -32,15 +32,15 @@ export const createMatrimonyProfile = asyncHandler(async (req, res) => {
     return res.status(404).json(new ApiResponse(404, null, "User not found"));
   }
 
-  // Check if the user has an active matrimony subscription
-  const { matrimonySubscription } = existsUser;
-  const currentDate = new Date();
+  // // Check if the user has an active matrimony subscription
+  // const { matrimonySubscription } = existsUser;
+  // const currentDate = new Date();
 
-  if (!matrimonySubscription || !matrimonySubscription.isSubscribed || matrimonySubscription.endDate < currentDate) {
-    return res.status(403).json(
-      new ApiResponse(403, null, "User must have an active matrimony subscription to create a matrimony profile")
-    );
-  }
+  // if (!matrimonySubscription || !matrimonySubscription.isSubscribed || matrimonySubscription.endDate < currentDate) {
+  //   return res.status(403).json(
+  //     new ApiResponse(403, null, "User must have an active matrimony subscription to create a matrimony profile")
+  //   );
+  // }
 
   const existingMatrimonyProfile = await Matrimony.findOne({ userId: id });
 

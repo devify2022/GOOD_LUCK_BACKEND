@@ -35,24 +35,24 @@ export const createDatingProfile = asyncHandler(async (req, res) => {
     }
 
     // Check if the user has an active matrimony subscription
-    const { datingSubscription } = existsUser;
-    const currentDate = new Date();
+    // const { datingSubscription } = existsUser;
+    // const currentDate = new Date();
 
-    if (
-      !datingSubscription ||
-      !datingSubscription.isSubscribed ||
-      datingSubscription.endDate < currentDate
-    ) {
-      return res
-        .status(403)
-        .json(
-          new ApiResponse(
-            403,
-            null,
-            "User must have an active dating subscription to create a dating profile"
-          )
-        );
-    }
+    // if (
+    //   !datingSubscription ||
+    //   !datingSubscription.isSubscribed ||
+    //   datingSubscription.endDate < currentDate
+    // ) {
+    //   return res
+    //     .status(403)
+    //     .json(
+    //       new ApiResponse(
+    //         403,
+    //         null,
+    //         "User must have an active dating subscription to create a dating profile"
+    //       )
+    //     );
+    // }
 
     const existingDatingProfile = await Dating.findOne({ userId: id });
 

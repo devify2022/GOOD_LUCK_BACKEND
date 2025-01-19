@@ -263,10 +263,10 @@ export const getAllJobBannerAdsByCategory = async (req, res, next) => {
   }
 };
 
-// Update JobBanner ad by userId
-export const updateJobBannerAdByUserId = async (req, res, next) => {
+// Update JobBanner ad by userId and jobId (from req.body)
+export const updateJobBannerAdByUserIdAndJobId = async (req, res, next) => {
   const { userId } = req.params;
-  const updateData = req.body;
+  const { jobId, ...updateData } = req.body; // Extract jobId and updateData from req.body
 
   try {
     // Step 1: Check if the user exists
@@ -275,11 +275,11 @@ export const updateJobBannerAdByUserId = async (req, res, next) => {
       return res.status(404).json(new ApiResponse(404, null, "User not found"));
     }
 
-    // Step 2: Update the JobBanner ad
+    // Step 2: Update the JobBanner ad using userId and jobId
     const jobBannerAd = await JobBanner.findOneAndUpdate(
-      { userId },
+      { userId, _id: jobId },
       updateData,
-      { new: true } // Return the updated document
+      { new: true }
     );
 
     if (!jobBannerAd) {
@@ -289,7 +289,7 @@ export const updateJobBannerAdByUserId = async (req, res, next) => {
           new ApiResponse(
             404,
             null,
-            `No JobBanner ad found for userId: ${userId}`
+            `No JobBanner ad found for userId: ${userId} and jobId: ${jobId}`
           )
         );
     }

@@ -370,10 +370,19 @@ const login_verify_OTP = asyncHandler(async (req, res) => {
           refreshToken,
           matrimonyID: matrimonyProfile ? matrimonyProfile.userId : null,
           datingID: datingProfile ? datingProfile.userId : null,
-          isMatrimonySubscribed: matrimonyProfile
-            ? matrimonyProfile.subscribed
+          isMatrimonySubscribed: userRecord.matrimonySubscription
+            ? userRecord.matrimonySubscription.isSubscribed
             : false,
-          isDatingSubscribed: datingProfile ? datingProfile.subscribed : false,
+          isDatingSubscribed: userRecord?.datingSubscription
+            ? userRecord.datingSubscription.isSubscribed
+            : false,
+          userDetails:  userRecord ? {
+            Fname: userRecord.Fname,
+            Lname: userRecord.Lname,
+            gender: userRecord.gender,
+            profile_picture: userRecord.profile_picture,
+            date_of_birth: userRecord.date_of_birth,
+          } : null,
           ads_subsCription: userRecord?.adSubscription
             ? {
                 isSubscribed: userRecord.adSubscription.isSubscribed,
@@ -381,6 +390,22 @@ const login_verify_OTP = asyncHandler(async (req, res) => {
                 EndDate: userRecord.adSubscription.endDate,
                 isPromoApplied: userRecord.adSubscription.isPromoApplied,
                 plan: userRecord.adSubscription.price,
+              }
+            : null,
+          matrimony_subsCription: userRecord?.matrimonySubscription
+            ? {
+                isSubscribed: userRecord.matrimonySubscription.isSubscribed,
+                StartDate: userRecord.matrimonySubscription.startDate,
+                EndDate: userRecord.matrimonySubscription.endDate,
+                category: userRecord.matrimonySubscription.category,
+              }
+            : null,
+          dating_subsCription: userRecord?.datingSubscription
+            ? {
+                isSubscribed: userRecord.datingSubscription.isSubscribed,
+                StartDate: userRecord.datingSubscription.startDate,
+                EndDate: userRecord.datingSubscription.endDate,
+                category: userRecord.datingSubscription.category,
               }
             : null,
         },
@@ -1002,17 +1027,14 @@ const buyDatingSubscription = asyncHandler(async (req, res) => {
 
   console.log(user.datingSubscription);
 
-  res
-    .status(200)
-    .json(
-      new ApiResponse(
-        200,
-        { subscription: user.datingSubscription }, // Correct the field here to 'datingSubscription'
-        "Dating subscription purchased successfully."
-      )
-    );
+  res.status(200).json(
+    new ApiResponse(
+      200,
+      { subscription: user.datingSubscription }, // Correct the field here to 'datingSubscription'
+      "Dating subscription purchased successfully."
+    )
+  );
 });
-
 
 // Get astrologers and reviews by user ID
 const getAstrologersAndReviewsByUserId = asyncHandler(async (req, res) => {
@@ -1105,5 +1127,5 @@ export {
   updateUserById,
   getAstrologersAndReviewsByUserId,
   buyMatrimonySubscription,
-  buyDatingSubscription
+  buyDatingSubscription,
 };

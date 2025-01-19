@@ -6,7 +6,7 @@ import {
   getAllJobBannerAdsByCategory,
   getJobBannerAdsByUserId,
   getJobBannerAdsByUserIdAndCategory,
-  updateJobBannerAdByUserId,
+  updateJobBannerAdByUserIdAndJobId,
 } from "../../controllers/advertisement/jobBanner.controller.js";
 
 const router = express.Router();
@@ -27,7 +27,7 @@ router.get("/getJobBannerAdsByUserIdAndCategory/:userId/:category", getJobBanner
 router.get("/getJobBannerAdsByCategory/:category", getAllJobBannerAdsByCategory);
 
 // Route to update JobBanner ad by userId
-router.patch("/update/:userId", updateJobBannerAdByUserId);
+router.patch("/update/:userId", updateJobBannerAdByUserIdAndJobId);
 
 // Route to delete JobBanner ad by userId
 router.delete("/delete/:userId", deleteJobBannerAdByUserId);

@@ -5,7 +5,7 @@ import { createDatingSubscription, deleteDatingSubscription, getDatingSubscripti
 const router = Router();
 
 router.route("/create").post(createDatingSubscription);
-router.route("/get").post(getDatingSubscription);
+router.route("/get").get(getDatingSubscription);
 router.route("/update").patch(updateDatingSubscription);
 router.route("/delete/:subscriptionId").delete(deleteDatingSubscription);
 

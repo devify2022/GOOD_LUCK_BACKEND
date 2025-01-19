@@ -98,8 +98,12 @@ const matrimonySchema = new Schema(
     },
     isVerified: {
       type: Boolean,
-      default: false
-    }
+      default: false,
+    },
+    see_limit: {
+      type: Boolean,
+      default: false,
+    },
   },
   { timestamps: true }
 );
