@@ -7,6 +7,7 @@ import {
   buyAdSubscription,
   buyDatingSubscription,
   buyMatrimonySubscription,
+  checkPromoCode,
   getAstrologersAndReviewsByUserId,
   getTransactionHistoryByUserId,
   getUserProfileDetailsById,
@@ -34,6 +35,7 @@ router.get('/transaction-history/:userId', getTransactionHistoryByUserId);
 router.get('/profile/:userId', getUserProfileDetailsById);
 router.patch('/update-profile/:userId', updateUserById);
 router.get('/get-astrologers-reviews/:userId', getAstrologersAndReviewsByUserId);
+router.post('/check-promo-code', checkPromoCode);
 
 // secure routes
 // router.route("/logout").post(verifyJWT, logoutUser);

@@ -376,13 +376,15 @@ const login_verify_OTP = asyncHandler(async (req, res) => {
           isDatingSubscribed: userRecord?.datingSubscription
             ? userRecord.datingSubscription.isSubscribed
             : false,
-          userDetails:  userRecord ? {
-            Fname: userRecord.Fname,
-            Lname: userRecord.Lname,
-            gender: userRecord.gender,
-            profile_picture: userRecord.profile_picture,
-            date_of_birth: userRecord.date_of_birth,
-          } : null,
+          userDetails: userRecord
+            ? {
+                Fname: userRecord.Fname,
+                Lname: userRecord.Lname,
+                gender: userRecord.gender,
+                profile_picture: userRecord.profile_picture,
+                date_of_birth: userRecord.date_of_birth,
+              }
+            : null,
           ads_subsCription: userRecord?.adSubscription
             ? {
                 isSubscribed: userRecord.adSubscription.isSubscribed,
@@ -1111,6 +1113,61 @@ const getAstrologersAndReviewsByUserId = asyncHandler(async (req, res) => {
   }
 });
 
+// Check Promo Code
+const checkPromoCode = asyncHandler(async (req, res) => {
+  const { promoCode } = req.body;
+
+  // Validate input
+  if (!promoCode) {
+    return res
+      .status(400)
+      .json(new ApiResponse(400, null, "Promo code is required"));
+  }
+
+  // Check promo code in Astrologer collection
+  const astrologer = await Astrologer.findOne({ promo_code: promoCode });
+  if (astrologer) {
+    return res.status(200).json(
+      new ApiResponse(
+        200,
+        {
+          type: "Astrologer",
+          details: {
+            id: astrologer._id,
+            name: `${astrologer.Fname} ${astrologer.Lname}`,
+            promoCode: astrologer.promo_code,
+          },
+        },
+        "Promo code is valid"
+      )
+    );
+  }
+
+  // Check promo code in AffiliateMarketer collection
+  const affiliate = await AffiliateMarketer.findOne({ promo_code: promoCode });
+  if (affiliate) {
+    return res.status(200).json(
+      new ApiResponse(
+        200,
+        {
+          type: "AffiliateMarketer",
+          details: {
+            id: affiliate._id,
+            name: `${affiliate.Fname} ${affiliate.Lname}`,
+            promoCode: affiliate.promo_code,
+          },
+        },
+        "Promo code is valid"
+      )
+    );
+  }
+
+  // If promo code does not exist
+  return res
+    .status(404)
+    .json(new ApiResponse(404, null, "Promo code not found"));
+});
+
 export {
   loginUser,
   login_verify_OTP,
@@ -1128,4 +1185,5 @@ export {
   getAstrologersAndReviewsByUserId,
   buyMatrimonySubscription,
   buyDatingSubscription,
+  checkPromoCode
 };

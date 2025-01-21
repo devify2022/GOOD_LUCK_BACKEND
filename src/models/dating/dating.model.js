@@ -25,6 +25,10 @@ const datingSchema = new Schema(
       type: String,
       required: [true, "Last name is required"],
     },
+    photos: {
+      type: [String],
+      required: [true, "Photo is required"],
+    },
     age: {
       type: Number,
       required: [true, "Age is required"],
@@ -110,12 +114,12 @@ const datingSchema = new Schema(
     },
     isVerified: {
       type: Boolean,
-      default: false
+      default: false,
     },
     see_limit: {
       type: Boolean,
-      default: false
-    }
+      default: false,
+    },
   },
   { timestamps: true }
 );
