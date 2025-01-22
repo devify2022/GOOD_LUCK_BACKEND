@@ -6,7 +6,7 @@ import {
   getAllHomeLandTextAdsByCategory,
   getHomeLandTextAdsByUserId,
   getHomeLandTextAdsByUserIdAndCategory,
-  updateHomeLandTextAdByUserId,
+  updateHomeLandTextAdByUserIdAndAdId
 } from "../../controllers/advertisement/homeLandText.controller.js";
 
 const router = express.Router();
@@ -33,7 +33,7 @@ router.get(
 );
 
 // Route to update HomeText ad by userId
-router.patch("/update/:userId", updateHomeLandTextAdByUserId);
+router.patch("/update/:userId", updateHomeLandTextAdByUserIdAndAdId);
 
 // Route to delete HomeText ad by userId
 router.delete("/delete/:userId", deleteHomeLandTextAdByUserId);

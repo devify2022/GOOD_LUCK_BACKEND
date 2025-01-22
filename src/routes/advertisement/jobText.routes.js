@@ -6,7 +6,7 @@ import {
   getAllJobTextAdsByCategory,
   getJobTextAdsByUserId,
   getJobTextAdsByUserIdAndCategory,
-  updateJobTextAdByUserId,
+  updateJobTextAdByUserIdAndAdId,
 } from "../../controllers/advertisement/jobText.controller.js";
 
 const router = express.Router();
@@ -21,13 +21,16 @@ router.get("/", getAllJobTextAds);
 router.get("/:userId", getJobTextAdsByUserId);
 
 // Route to get JobText ads by userId and category
-router.get("/getJobTextAdsByUserIdAndCategory/:userId/:category", getJobTextAdsByUserIdAndCategory);
+router.get(
+  "/getJobTextAdsByUserIdAndCategory/:userId/:category",
+  getJobTextAdsByUserIdAndCategory
+);
 
 // Route to get JobText ads by Category
 router.get("/getAllJobTextAdsByCategory/:category", getAllJobTextAdsByCategory);
 
 // Route to update JobText ad by userId
-router.patch("/update/:userId", updateJobTextAdByUserId);
+router.patch("/update/:userId", updateJobTextAdByUserIdAndAdId);
 
 // Route to delete JobText ad by userId
 router.delete("/delete/:userId", deleteJobTextAdByUserId);

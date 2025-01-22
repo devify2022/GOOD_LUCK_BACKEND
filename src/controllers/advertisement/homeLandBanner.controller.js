@@ -259,52 +259,68 @@ export const getAllHomeLandBannersByCategory = async (req, res, next) => {
   }
 };
 
-// Update HomeBanner ad by userId
-export const updateHomeLandBannerAdByUserId = async (req, res, next) => {
+// Update HomeBanner ad by userId and homeLandAdId (from req.body)
+export const updateHomeLandBannerAdByUserIdAndAdId = async (req, res, next) => {
   const { userId } = req.params;
-  const updateData = req.body;
+  const { homeLandAdId, ...updateData } = req.body; // Extract homeLandAdId and updateData from req.body
 
   try {
-    // Step 1: Find the user by userId
-    const user = await User.findById(userId); // Find the user from the User collection
+    // Step 1: Check if the user exists
+    const user = await User.findById(userId);
     if (!user) {
       return res.status(404).json(new ApiResponse(404, null, "User not found"));
     }
 
-    // Step 2: Find and update the HomeBanner ad for the user
-    const homeLandBannerAds = await HomeLandBanner.findOneAndUpdate(
-      { userId },
+    // Step 2: Update the HomeBanner ad using userId and homeLandAdId
+    const homeLandBannerAd = await HomeLandBanner.findOneAndUpdate(
+      { userId, _id: homeLandAdId },
       updateData,
       { new: true, runValidators: true }
     );
 
-    if (!homeLandBannerAds) {
+    if (!homeLandBannerAd) {
       return res
         .status(404)
-        .json(new ApiResponse(404, null, `No ad found for userId: ${userId}`));
+        .json(
+          new ApiResponse(
+            404,
+            null,
+            `No HomeLandBanner ad found for userId: ${userId} and adId: ${homeLandAdId}`
+          )
+        );
     }
 
-    // Step 3: Update the corresponding ServiceAd if homeAdType or homeLandAdId is modified
+    // Step 3: Optionally update ServiceAds if relevant
     if (updateData.homeAdType || updateData.homeLandAdId) {
       await ServiceAds.updateOne(
-        { userId, homeLandAdId: homeLandBannerAds._id },
-        { homeAdType: "HomeLandBanner", homeLandAdId: homeLandBannerAds._id }
+        { userId, homeLandAdId: homeLandBannerAd._id },
+        { homeAdType: "HomeLandBanner", homeLandAdId: homeLandBannerAd._id }
       );
     }
 
-    // Step 4: Return the success response
+    // Step 4: Respond with success
     res
       .status(200)
-      .json(new ApiResponse(200, homeLandBannerAds, "Ad updated successfully"));
+      .json(
+        new ApiResponse(
+          200,
+          homeLandBannerAd,
+          "HomeLandBanner ad updated successfully"
+        )
+      );
   } catch (error) {
     if (error.name === "ValidationError") {
-      const errors = handleValidationError(error);
-      res
+      return res
         .status(400)
-        .json(new ApiResponse(400, { errors }, "Validation error occurred"));
-    } else {
-      next(error);
+        .json(
+          new ApiResponse(
+            400,
+            handleValidationError(error),
+            "Validation error occurred"
+          )
+        );
     }
+    next(error);
   }
 };
 

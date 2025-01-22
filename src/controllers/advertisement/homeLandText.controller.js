@@ -262,21 +262,21 @@ export const getAllHomeLandTextAdsByCategory = async (req, res, next) => {
   }
 };
 
-// Update HomeText ad by userId
-export const updateHomeLandTextAdByUserId = async (req, res, next) => {
+// Update HomeText ad by userId and homeLandAdId (from req.body)
+export const updateHomeLandTextAdByUserIdAndAdId = async (req, res, next) => {
   const { userId } = req.params;
-  const updateData = req.body;
+  const { homeLandAdId, ...updateData } = req.body; // Extract homeLandAdId and updateData from req.body
 
   try {
-    // Step 1: Find the user by userId
-    const user = await User.findById(userId); // Find the user from the User collection
+    // Step 1: Check if the user exists
+    const user = await User.findById(userId);
     if (!user) {
       return res.status(404).json(new ApiResponse(404, null, "User not found"));
     }
 
-    // Step 2: Update the HomeText ad
+    // Step 2: Update the HomeText ad using userId and homeLandAdId
     const homeLandTextAd = await HomeLandText.findOneAndUpdate(
-      { userId },
+      { userId, _id: homeLandAdId },
       updateData,
       { new: true, runValidators: true } // Return the updated document and validate the update
     );
@@ -284,10 +284,16 @@ export const updateHomeLandTextAdByUserId = async (req, res, next) => {
     if (!homeLandTextAd) {
       return res
         .status(404)
-        .json(new ApiResponse(404, null, `No ads found for userId: ${userId}`));
+        .json(
+          new ApiResponse(
+            404,
+            null,
+            `No HomeLandText ad found for userId: ${userId} and adId: ${homeLandAdId}`
+          )
+        );
     }
 
-    // Optionally update ServiceAds if relevant
+    // Step 3: Optionally update ServiceAds if relevant
     if (updateData.homeAdType || updateData.homeLandAdId) {
       await ServiceAds.updateOne(
         { userId, homeLandAdId: homeLandTextAd._id },
@@ -295,18 +301,29 @@ export const updateHomeLandTextAdByUserId = async (req, res, next) => {
       );
     }
 
+    // Step 4: Respond with success
     res
       .status(200)
-      .json(new ApiResponse(200, homeLandTextAd, "Ad updated successfully"));
+      .json(
+        new ApiResponse(
+          200,
+          homeLandTextAd,
+          "HomeLandText ad updated successfully"
+        )
+      );
   } catch (error) {
     if (error.name === "ValidationError") {
-      const errors = handleValidationError(error);
-      res
+      return res
         .status(400)
-        .json(new ApiResponse(400, { errors }, "Validation error occurred"));
-    } else {
-      next(error);
+        .json(
+          new ApiResponse(
+            400,
+            handleValidationError(error),
+            "Validation error occurred"
+          )
+        );
     }
+    next(error);
   }
 };
 

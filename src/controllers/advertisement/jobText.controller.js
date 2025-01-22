@@ -266,16 +266,23 @@ export const getAllJobTextAdsByCategory = async (req, res, next) => {
   }
 };
 
-// Update JobText ad by userId
-export const updateJobTextAdByUserId = async (req, res, next) => {
+// Update JobText ad by userId and jobTextAdId (from req.body)
+export const updateJobTextAdByUserIdAndAdId = async (req, res, next) => {
   const { userId } = req.params;
-  const updateData = req.body;
+  const { jobTextAdId, ...updateData } = req.body; // Extract jobTextAdId and updateData from req.body
 
   try {
+    // Step 1: Check if the user exists
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json(new ApiResponse(404, null, "User not found"));
+    }
+
+    // Step 2: Update the JobText ad using userId and jobTextAdId
     const jobTextAd = await JobText.findOneAndUpdate(
-      { userId },
+      { userId, _id: jobTextAdId },
       updateData,
-      { new: true } // Return the updated document
+      { new: true, runValidators: true } // Return the updated document and validate the update
     );
 
     if (!jobTextAd) {
@@ -285,12 +292,12 @@ export const updateJobTextAdByUserId = async (req, res, next) => {
           new ApiResponse(
             404,
             null,
-            `No JobText ad found for userId: ${userId}`
+            `No JobText ad found for userId: ${userId} and adId: ${jobTextAdId}`
           )
         );
     }
 
-    // Optionally update ServiceAds if relevant
+    // Step 3: Optionally update ServiceAds if relevant
     if (updateData.jobAdType || updateData.job_ad_id) {
       await ServiceAds.updateOne(
         { userId, job_ad_id: jobTextAd._id },
@@ -298,6 +305,7 @@ export const updateJobTextAdByUserId = async (req, res, next) => {
       );
     }
 
+    // Step 4: Respond with success
     res
       .status(200)
       .json(new ApiResponse(200, jobTextAd, "JobText ad updated successfully"));
