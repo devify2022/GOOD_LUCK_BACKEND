@@ -51,6 +51,7 @@ import razorpayRouter from "./routes/payment/razorpay.routes.js";
 // Use routes
 app.use("/good_luck/api/v1/auth", userRoutes);
 app.use("/good_luck/api/v1/astrologer", astrologerRoutes);
+app.use("/good_luck/api/v1/astrologerChat", astrologerChatRoutes);
 app.use("/good_luck/api/v1/withdraw", withdraw);
 app.use("/good_luck/api/v1/dating", datingRoutes);
 app.use("/good_luck/api/v1/matchedProfile", datingMatchedRoutes);
