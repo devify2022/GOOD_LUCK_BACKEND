@@ -575,7 +575,6 @@ export const getAstrologerChatHistory = asyncHandler(async (req, res) => {
     );
 });
 
-
 // Get chat list for a user or astrologer
 export const getChatList = asyncHandler(async (req, res) => {
   const { id } = req.params;
@@ -608,6 +607,41 @@ export const getChatList = asyncHandler(async (req, res) => {
         .json(new ApiResponse(400, null, "Invalid ID provided."));
     }
 
+    // Function to calculate total chat time for each contact
+    const calculateChatTime = (contactId, model) => {
+      let totalChatTime = 0; // Total time in milliseconds
+
+      chats.forEach((chat) => {
+        const relevantMessages = chat.messages.filter(
+          (msg) =>
+            (msg.senderId.toString() === contactId &&
+              msg.senderModel === model) ||
+            (msg.receiverId.toString() === contactId &&
+              msg.receiverModel === model)
+        );
+
+        for (let i = 1; i < relevantMessages.length; i++) {
+          const previousMessage = relevantMessages[i - 1];
+          const currentMessage = relevantMessages[i];
+          if (previousMessage.timestamp && currentMessage.timestamp) {
+            totalChatTime +=
+              new Date(currentMessage.timestamp) -
+              new Date(previousMessage.timestamp);
+          }
+        }
+      });
+
+      // Convert milliseconds to total seconds
+      const totalSeconds = Math.floor(totalChatTime / 1000);
+
+      // Extract minutes and seconds
+      const minutes = Math.floor(totalSeconds / 60);
+      const seconds = totalSeconds % 60;
+
+      // Format output as "X min Y sec"
+      return `${minutes} min ${seconds} sec`;
+    };
+
     // If ID is a user, fetch astrologer details
     if (isUser) {
       const astrologerIds = [
@@ -622,17 +656,24 @@ export const getChatList = asyncHandler(async (req, res) => {
         ),
       ];
 
-      // Fetch astrologer details
       const astrologers = await Astrologer.find({
         _id: { $in: astrologerIds },
       }).select("Fname Lname profile_picture");
+
+      const astrologerDetails = astrologers.map((astrologer) => ({
+        ...astrologer.toObject(),
+        totalChatTime: calculateChatTime(
+          astrologer._id.toString(),
+          "Astrologer"
+        ),
+      }));
 
       return res
         .status(200)
         .json(
           new ApiResponse(
             200,
-            astrologers,
+            astrologerDetails,
             "List of astrologers you've chatted with retrieved successfully."
           )
         );
@@ -652,17 +693,21 @@ export const getChatList = asyncHandler(async (req, res) => {
         ),
       ];
 
-      // Fetch user details
       const users = await User.find({
         _id: { $in: userIds },
       }).select("Fname Lname profile_picture");
+
+      const userDetails = users.map((user) => ({
+        ...user.toObject(),
+        totalChatTime: calculateChatTime(user._id.toString(), "User"),
+      }));
 
       return res
         .status(200)
         .json(
           new ApiResponse(
             200,
-            users,
+            userDetails,
             "List of users you've chatted with retrieved successfully."
           )
         );
