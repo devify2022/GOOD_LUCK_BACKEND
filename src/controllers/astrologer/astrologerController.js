@@ -708,6 +708,73 @@ export const updateAstrologerById = asyncHandler(async (req, res) => {
   }
 });
 
+// Filter astrologers by multiple specializations
+export const filterAstrologersBySpecialization = asyncHandler(
+  async (req, res) => {
+    try {
+      // Get the specializations from the request body
+      const { specializations } = req.body;
+      console.log(specializations)
+
+      // Validate that specializations are provided and is an array
+      if (
+        !specializations ||
+        !Array.isArray(specializations) ||
+        specializations.length === 0
+      ) {
+        return res
+          .status(400)
+          .json(
+            new ApiResponse(
+              400,
+              null,
+              "Specializations must be a non-empty array"
+            )
+          );
+      }
+
+      // Query the astrologers based on the multiple specializations
+      const astrologers = await Astrologer.find({
+        specialisation: { $in: specializations },
+      })
+        .select("-wallet") // Exclude wallet from response
+        .populate("specialisation"); // Populate the specialisation field
+
+      // If no astrologers are found, return a 404 response
+      if (astrologers.length === 0) {
+        return res
+          .status(404)
+          .json(
+            new ApiResponse(
+              404,
+              null,
+              "No astrologers found for the given specializations"
+            )
+          );
+      }
+
+      // Return the filtered astrologers
+      return res
+        .status(200)
+        .json(
+          new ApiResponse(
+            200,
+            astrologers,
+            "Astrologers filtered by specializations successfully"
+          )
+        );
+    } catch (error) {
+      // Handle any errors
+      console.error("Error filtering astrologers by specializations:", error);
+      return res
+        .status(500)
+        .json(
+          new ApiResponse(500, null, "Internal Server Error", error.message)
+        );
+    }
+  }
+);
+
 // Delete Astrologer by ID
 export const deleteAstrologerById = asyncHandler(async (req, res) => {
   try {

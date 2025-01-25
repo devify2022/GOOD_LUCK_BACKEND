@@ -29,6 +29,7 @@ app.use(express.static("public"));
 // Import routes
 import userRoutes from "./routes/auth/user.routes.js";
 import astrologerRoutes from "./routes/astrologer/astrologer.route.js";
+import astrologerCategoryRoutes from "./routes/astrologer/astrologercategory.routes.js";
 import astrologerChatRoutes from "./routes/astrologerChatRoutes/astrologerChat.routes.js";
 import withdraw from "./routes/astrologer/withdraw/withdrwal.routes.js";
 import datingRoutes from "./routes/dating/dating.routes.js";
@@ -51,6 +52,7 @@ import razorpayRouter from "./routes/payment/razorpay.routes.js";
 // Use routes
 app.use("/good_luck/api/v1/auth", userRoutes);
 app.use("/good_luck/api/v1/astrologer", astrologerRoutes);
+app.use("/good_luck/api/v1/astrologer/category", astrologerCategoryRoutes);
 app.use("/good_luck/api/v1/astrologerChat", astrologerChatRoutes);
 app.use("/good_luck/api/v1/withdraw", withdraw);
 app.use("/good_luck/api/v1/dating", datingRoutes);

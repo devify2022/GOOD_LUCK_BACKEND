@@ -40,7 +40,7 @@ const astrologerSchema = new Schema(
       },
     },
     specialisation: {
-      type: [String],
+      type: [{ type: Schema.Types.ObjectId, ref: "AstrologerCategory" }],
       required: [true, "Specialisation is required"],
     },
     reviews: [reviewSchema],

@@ -49,7 +49,7 @@ const astrologerRequestSchema = new Schema(
       },
     },
     specialisation: {
-      type: [String],
+      type: [{ type: Schema.Types.ObjectId, ref: "AstrologerCategory" }],
       required: [true, "Specialisation is required"],
     },
     total_number_service_provide: {
