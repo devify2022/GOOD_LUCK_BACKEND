@@ -355,7 +355,11 @@ export async function handleCallRequest(io, data, socket) {
     }
 
     // Save the call request in the database
-    const callRequest = new ChatRequest({ userId, astrologerId, callType });
+    const callRequest = new ChatRequest({
+      userId,
+      astrologerId,
+      chatType: callType,
+    });
     await callRequest.save();
 
     // Agora credentials
@@ -666,6 +670,7 @@ export const getChatList = asyncHandler(async (req, res) => {
           astrologer._id.toString(),
           "Astrologer"
         ),
+        astrologerId: astrologer._id.toString(),
       }));
 
       return res
@@ -700,6 +705,7 @@ export const getChatList = asyncHandler(async (req, res) => {
       const userDetails = users.map((user) => ({
         ...user.toObject(),
         totalChatTime: calculateChatTime(user._id.toString(), "User"),
+        userId: user._id.toString(),
       }));
 
       return res
