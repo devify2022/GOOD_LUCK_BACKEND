@@ -714,7 +714,7 @@ export const filterAstrologersBySpecialization = asyncHandler(
     try {
       // Get the specializations from the request body
       const { specializations } = req.body;
-      console.log(specializations)
+      console.log(specializations);
 
       // Validate that specializations are provided and is an array
       if (
@@ -933,3 +933,31 @@ export const getAllReviewsByAstrologerId = asyncHandler(async (req, res) => {
       );
   }
 });
+
+// Get wallet transaction history by ID
+export const getWalletTransactionHistoryById = asyncHandler(
+  async (req, res) => {
+    const { id } = req.params;
+
+    // Find the Astrologer by ID
+    const astrologer = await Astrologer.findById(id);
+    if (!astrologer) {
+      return res
+        .status(404)
+        .json(new ApiResponse(404, null, "Astrologer not found"));
+    }
+
+    // Get the wallet transaction history
+    const transactionHistory = astrologer.wallet.transactionHistory;
+
+    return res
+      .status(200)
+      .json(
+        new ApiResponse(
+          200,
+          { transactions: transactionHistory },
+          "Wallet transaction history retrieved successfully"
+        )
+      );
+  }
+);

@@ -14,6 +14,7 @@ import {
   getRejectedRequestById,
   getUpdateRequestAstrologerById,
   getWalletBalanceById,
+  getWalletTransactionHistoryById,
   giveReviewToAstrologer,
   rejectAstrologer,
   updateRequestAstrologerProfile,
@@ -38,6 +39,7 @@ router.get("/update-requests/:id", getUpdateRequestAstrologerById);
 router.route("/astroWallet/addBalance/:id").patch(addBalanceToAstrologerWallet);
 router.route("/delete/:id").delete(deleteAstrologerById);
 router.get("/wallet-balance/:id", getWalletBalanceById);
+router.get("/transaction-history/:id", getWalletTransactionHistoryById);
 router.post("/post-review/:id", giveReviewToAstrologer);
 router.get("/getall-reviews/:id", getAllReviewsByAstrologerId);
 
