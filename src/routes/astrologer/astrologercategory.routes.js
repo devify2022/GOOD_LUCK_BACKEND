@@ -15,7 +15,7 @@ router.patch("/update/:id", updateAstrologerCategoryById);
 // Delete a category by ID
 router.delete("/delete/:id", deleteAstrologerCategoryById);
 
-router.get("/filter", filterAstrologersBySpecialization);
+router.post("/filter", filterAstrologersBySpecialization);
 
 
 export default router;
