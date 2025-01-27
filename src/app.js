@@ -46,6 +46,8 @@ import homeBannerRouter from "./routes/advertisement/homeLandBanner.routes.js";
 import homeTextRouter from "./routes/advertisement/homeLandText.routes.js";
 import jobBannerRouter from "./routes/advertisement/jobBanner.routes.js";
 import jobTextRouter from "./routes/advertisement/jobText.routes.js";
+import mariageMakingRouter from "./routes/marriageMaking/marriageMaking.routes.js";
+import janamKundliRouter from "./routes/janamkundli/janamkundli.routes.js";
 import paymentRouter from "./routes/payment/payment.routes.js";
 import razorpayRouter from "./routes/payment/razorpay.routes.js";
 
@@ -69,6 +71,8 @@ app.use("/good_luck/api/v1/homeLandBanner", homeBannerRouter);
 app.use("/good_luck/api/v1/homeLandText", homeTextRouter);
 app.use("/good_luck/api/v1/jobBanner", jobBannerRouter);
 app.use("/good_luck/api/v1/jobText", jobTextRouter);
+app.use("/good_luck/api/v1/mariageMaking", mariageMakingRouter);
+app.use("/good_luck/api/v1/janamKundli", janamKundliRouter);
 app.use("/", paymentRouter);
 app.use("/", razorpayRouter);
 
