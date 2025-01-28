@@ -269,7 +269,7 @@ export const getAllJobTextAdsByCategory = async (req, res, next) => {
 // Update JobText ad by userId and jobTextAdId (from req.body)
 export const updateJobTextAdByUserIdAndAdId = async (req, res, next) => {
   const { userId } = req.params;
-  const { jobTextAdId, ...updateData } = req.body; // Extract jobTextAdId and updateData from req.body
+  const { adId, ...updateData } = req.body; // Extract jobTextAdId and updateData from req.body
 
   try {
     // Step 1: Check if the user exists
@@ -280,7 +280,7 @@ export const updateJobTextAdByUserIdAndAdId = async (req, res, next) => {
 
     // Step 2: Update the JobText ad using userId and jobTextAdId
     const jobTextAd = await JobText.findOneAndUpdate(
-      { userId, _id: jobTextAdId },
+      { userId, _id: adId },
       updateData,
       { new: true, runValidators: true } // Return the updated document and validate the update
     );
@@ -292,7 +292,7 @@ export const updateJobTextAdByUserIdAndAdId = async (req, res, next) => {
           new ApiResponse(
             404,
             null,
-            `No JobText ad found for userId: ${userId} and adId: ${jobTextAdId}`
+            `No JobText ad found for userId: ${userId} and adId: ${adId}`
           )
         );
     }
@@ -321,12 +321,23 @@ export const updateJobTextAdByUserIdAndAdId = async (req, res, next) => {
   }
 };
 
-// Delete JobText ad by userId
-export const deleteJobTextAdByUserId = async (req, res, next) => {
+// Delete JobText ad by userId and adId
+export const deleteJobTextAdByUserIdAndAdId = async (req, res, next) => {
   const { userId } = req.params;
+  const { adId } = req.body; // Extract adId from the request body
 
   try {
-    const jobTextAd = await JobText.findOneAndDelete({ userId });
+    // Step 1: Check if the user exists
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json(new ApiResponse(404, null, "User not found"));
+    }
+
+    // Step 2: Find and delete the JobText ad using userId and adId
+    const jobTextAd = await JobText.findOneAndDelete({
+      userId,
+      _id: adId,
+    });
 
     if (!jobTextAd) {
       return res
@@ -335,14 +346,15 @@ export const deleteJobTextAdByUserId = async (req, res, next) => {
           new ApiResponse(
             404,
             null,
-            `No JobText ad found for userId: ${userId}`
+            `No JobText ad found for userId: ${userId} and adId: ${adId}`
           )
         );
     }
 
-    // Also delete associated ServiceAds
+    // Step 3: Delete the corresponding ServiceAd
     await ServiceAds.deleteOne({ userId, job_ad_id: jobTextAd._id });
 
+    // Step 4: Respond with success
     res
       .status(200)
       .json(

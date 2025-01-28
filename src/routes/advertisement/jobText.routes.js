@@ -1,7 +1,7 @@
 import express from "express";
 import {
   createJobTextAd,
-  deleteJobTextAdByUserId,
+  deleteJobTextAdByUserIdAndAdId,
   getAllJobTextAds,
   getAllJobTextAdsByCategory,
   getJobTextAdsByUserId,
@@ -33,6 +33,6 @@ router.get("/getAllJobTextAdsByCategory/:category", getAllJobTextAdsByCategory);
 router.patch("/update/:userId", updateJobTextAdByUserIdAndAdId);
 
 // Route to delete JobText ad by userId
-router.delete("/delete/:userId", deleteJobTextAdByUserId);
+router.delete("/delete/:userId", deleteJobTextAdByUserIdAndAdId);
 
 export default router;

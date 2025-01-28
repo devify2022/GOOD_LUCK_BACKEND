@@ -1,7 +1,7 @@
 import express from "express";
 import {
   createHomeLandBannerAd,
-  deleteHomeLandBannerAdByUserId,
+  deleteHomeLandBannerAdByUserIdAndAdId,
   getAllHomeLandBannerAds,
   getAllHomeLandBannersByCategory,
   getHomeLandBannerAdsByUserId,
@@ -33,6 +33,6 @@ router.get("/getByCategory/:category", getAllHomeLandBannersByCategory);
 router.patch("/update/:userId", updateHomeLandBannerAdByUserIdAndAdId);
 
 // Route to delete HomeBanner ad by userId
-router.delete("/delete/:userId", deleteHomeLandBannerAdByUserId);
+router.delete("/delete/:userId", deleteHomeLandBannerAdByUserIdAndAdId);
 
 export default router;

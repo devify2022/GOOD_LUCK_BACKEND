@@ -1,7 +1,7 @@
 import express from "express";
 import {
   createJobBannerAd,
-  deleteJobBannerAdByUserId,
+  deleteJobBannerAdByUserIdAndAdId,
   getAllJobBannerAds,
   getAllJobBannerAdsByCategory,
   getJobBannerAdsByUserId,
@@ -30,6 +30,6 @@ router.get("/getJobBannerAdsByCategory/:category", getAllJobBannerAdsByCategory)
 router.patch("/update/:userId", updateJobBannerAdByUserIdAndJobId);
 
 // Route to delete JobBanner ad by userId
-router.delete("/delete/:userId", deleteJobBannerAdByUserId);
+router.delete("/delete/:userId", deleteJobBannerAdByUserIdAndAdId);
 
 export default router;

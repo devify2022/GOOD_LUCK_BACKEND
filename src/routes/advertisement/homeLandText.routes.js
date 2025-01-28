@@ -1,7 +1,7 @@
 import express from "express";
 import {
   createHomeLandTextAd,
-  deleteHomeLandTextAdByUserId,
+  deleteHomeLandTextAdByUserIdAndAdId,
   getAllHomeLandTextAds,
   getAllHomeLandTextAdsByCategory,
   getHomeLandTextAdsByUserId,
@@ -36,6 +36,6 @@ router.get(
 router.patch("/update/:userId", updateHomeLandTextAdByUserIdAndAdId);
 
 // Route to delete HomeText ad by userId
-router.delete("/delete/:userId", deleteHomeLandTextAdByUserId);
+router.delete("/delete/:userId", deleteHomeLandTextAdByUserIdAndAdId);
 
 export default router;

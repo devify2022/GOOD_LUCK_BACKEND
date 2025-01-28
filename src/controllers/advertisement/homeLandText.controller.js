@@ -265,7 +265,7 @@ export const getAllHomeLandTextAdsByCategory = async (req, res, next) => {
 // Update HomeText ad by userId and homeLandAdId (from req.body)
 export const updateHomeLandTextAdByUserIdAndAdId = async (req, res, next) => {
   const { userId } = req.params;
-  const { homeLandAdId, ...updateData } = req.body; // Extract homeLandAdId and updateData from req.body
+  const { adId, ...updateData } = req.body; // Extract homeLandAdId and updateData from req.body
 
   try {
     // Step 1: Check if the user exists
@@ -276,7 +276,7 @@ export const updateHomeLandTextAdByUserIdAndAdId = async (req, res, next) => {
 
     // Step 2: Update the HomeText ad using userId and homeLandAdId
     const homeLandTextAd = await HomeLandText.findOneAndUpdate(
-      { userId, _id: homeLandAdId },
+      { userId, _id: adId },
       updateData,
       { new: true, runValidators: true } // Return the updated document and validate the update
     );
@@ -288,7 +288,7 @@ export const updateHomeLandTextAdByUserIdAndAdId = async (req, res, next) => {
           new ApiResponse(
             404,
             null,
-            `No HomeLandText ad found for userId: ${userId} and adId: ${homeLandAdId}`
+            `No HomeLandText ad found for userId: ${userId} and adId: ${adId}`
           )
         );
     }
@@ -327,29 +327,40 @@ export const updateHomeLandTextAdByUserIdAndAdId = async (req, res, next) => {
   }
 };
 
-// Delete HomeText ad by userId
-export const deleteHomeLandTextAdByUserId = async (req, res, next) => {
+// Delete HomeText ad by userId and adId
+export const deleteHomeLandTextAdByUserIdAndAdId = async (req, res, next) => {
   const { userId } = req.params;
+  const { adId } = req.body; // Extract adId from the request body
 
   try {
-    // Step 1: Find the user by userId
-    const user = await User.findById(userId); // Find the user from the User collection
+    // Step 1: Check if the user exists
+    const user = await User.findById(userId);
     if (!user) {
       return res.status(404).json(new ApiResponse(404, null, "User not found"));
     }
 
-    // Step 2: Delete the HomeText ad
-    const homeLandTextAd = await HomeLandText.findOneAndDelete({ userId });
+    // Step 2: Find the HomeLandText ad using userId and adId
+    const homeLandTextAd = await HomeLandText.findOneAndDelete({
+      userId,
+      _id: adId,
+    });
 
     if (!homeLandTextAd) {
       return res
         .status(404)
-        .json(new ApiResponse(404, null, `No ad found for userId: ${userId}`));
+        .json(
+          new ApiResponse(
+            404,
+            null,
+            `No HomeLandText ad found for userId: ${userId} and adId: ${adId}`
+          )
+        );
     }
 
-    // Step 3: Delete associated ServiceAds
+    // Step 3: Delete the corresponding ServiceAd
     await ServiceAds.deleteOne({ userId, homeLandAdId: homeLandTextAd._id });
 
+    // Step 4: Return the success response
     res
       .status(200)
       .json(new ApiResponse(200, homeLandTextAd, "Ad deleted successfully"));

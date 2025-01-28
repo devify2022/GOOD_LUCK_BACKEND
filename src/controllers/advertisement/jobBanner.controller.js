@@ -266,7 +266,7 @@ export const getAllJobBannerAdsByCategory = async (req, res, next) => {
 // Update JobBanner ad by userId and jobId (from req.body)
 export const updateJobBannerAdByUserIdAndJobId = async (req, res, next) => {
   const { userId } = req.params;
-  const { jobId, ...updateData } = req.body; // Extract jobId and updateData from req.body
+  const { adId, ...updateData } = req.body; // Extract jobId and updateData from req.body
 
   try {
     // Step 1: Check if the user exists
@@ -277,7 +277,7 @@ export const updateJobBannerAdByUserIdAndJobId = async (req, res, next) => {
 
     // Step 2: Update the JobBanner ad using userId and jobId
     const jobBannerAd = await JobBanner.findOneAndUpdate(
-      { userId, _id: jobId },
+      { userId, _id: adId },
       updateData,
       { new: true }
     );
@@ -289,7 +289,7 @@ export const updateJobBannerAdByUserIdAndJobId = async (req, res, next) => {
           new ApiResponse(
             404,
             null,
-            `No JobBanner ad found for userId: ${userId} and jobId: ${jobId}`
+            `No JobBanner ad found for userId: ${userId} and jobId: ${adId}`
           )
         );
     }
@@ -320,9 +320,10 @@ export const updateJobBannerAdByUserIdAndJobId = async (req, res, next) => {
   }
 };
 
-// Delete JobBanner ad by userId
-export const deleteJobBannerAdByUserId = async (req, res, next) => {
+// Delete JobBanner ad by userId and adId
+export const deleteJobBannerAdByUserIdAndAdId = async (req, res, next) => {
   const { userId } = req.params;
+  const { adId } = req.body; // Extract adId from the request body
 
   try {
     // Step 1: Check if the user exists
@@ -331,8 +332,11 @@ export const deleteJobBannerAdByUserId = async (req, res, next) => {
       return res.status(404).json(new ApiResponse(404, null, "User not found"));
     }
 
-    // Step 2: Delete the JobBanner ad
-    const jobBannerAd = await JobBanner.findOneAndDelete({ userId });
+    // Step 2: Find the JobBanner ad using userId and adId
+    const jobBannerAd = await JobBanner.findOneAndDelete({
+      userId,
+      _id: adId,
+    });
 
     if (!jobBannerAd) {
       return res
@@ -341,12 +345,12 @@ export const deleteJobBannerAdByUserId = async (req, res, next) => {
           new ApiResponse(
             404,
             null,
-            `No JobBanner ad found for userId: ${userId}`
+            `No JobBanner ad found for userId: ${userId} and adId: ${adId}`
           )
         );
     }
 
-    // Step 3: Delete associated ServiceAds
+    // Step 3: Delete the corresponding ServiceAd
     await ServiceAds.deleteOne({ userId, job_ad_id: jobBannerAd._id });
 
     // Step 4: Respond with success

@@ -48,6 +48,9 @@ import jobBannerRouter from "./routes/advertisement/jobBanner.routes.js";
 import jobTextRouter from "./routes/advertisement/jobText.routes.js";
 import mariageMakingRouter from "./routes/marriageMaking/marriageMaking.routes.js";
 import janamKundliRouter from "./routes/janamkundli/janamkundli.routes.js";
+import dakshinaRouter from "./routes/dakshina/dakshina.routes.js";
+import panchangRouter from "./routes/panchang/panchang.routes.js";
+import rasifalRouter from "./routes/rasifal/rasifal.routes.js";
 import paymentRouter from "./routes/payment/payment.routes.js";
 import razorpayRouter from "./routes/payment/razorpay.routes.js";
 
@@ -73,6 +76,9 @@ app.use("/good_luck/api/v1/jobBanner", jobBannerRouter);
 app.use("/good_luck/api/v1/jobText", jobTextRouter);
 app.use("/good_luck/api/v1/mariageMaking", mariageMakingRouter);
 app.use("/good_luck/api/v1/janamKundli", janamKundliRouter);
+app.use("/good_luck/api/v1/dakshina", dakshinaRouter);
+app.use("/good_luck/api/v1/panchang", panchangRouter);
+app.use("/good_luck/api/v1/rasifal", rasifalRouter);
 app.use("/", paymentRouter);
 app.use("/", razorpayRouter);
 
