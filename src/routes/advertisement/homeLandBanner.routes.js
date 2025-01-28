@@ -33,6 +33,6 @@ router.get("/getByCategory/:category", getAllHomeLandBannersByCategory);
 router.patch("/update/:userId", updateHomeLandBannerAdByUserIdAndAdId);
 
 // Route to delete HomeBanner ad by userId
-router.delete("/delete/:userId", deleteHomeLandBannerAdByUserIdAndAdId);
+router.delete("/delete/:userId/:adId", deleteHomeLandBannerAdByUserIdAndAdId);
 
 export default router;

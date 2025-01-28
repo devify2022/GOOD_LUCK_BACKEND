@@ -36,6 +36,6 @@ router.get(
 router.patch("/update/:userId", updateHomeLandTextAdByUserIdAndAdId);
 
 // Route to delete HomeText ad by userId
-router.delete("/delete/:userId", deleteHomeLandTextAdByUserIdAndAdId);
+router.delete("/delete/:userId/:adId", deleteHomeLandTextAdByUserIdAndAdId);
 
 export default router;

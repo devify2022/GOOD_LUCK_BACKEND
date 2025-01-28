@@ -33,6 +33,6 @@ router.get("/getAllJobTextAdsByCategory/:category", getAllJobTextAdsByCategory);
 router.patch("/update/:userId", updateJobTextAdByUserIdAndAdId);
 
 // Route to delete JobText ad by userId
-router.delete("/delete/:userId", deleteJobTextAdByUserIdAndAdId);
+router.delete("/delete/:userId/:adId", deleteJobTextAdByUserIdAndAdId);
 
 export default router;

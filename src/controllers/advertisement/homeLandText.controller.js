@@ -329,8 +329,7 @@ export const updateHomeLandTextAdByUserIdAndAdId = async (req, res, next) => {
 
 // Delete HomeText ad by userId and adId
 export const deleteHomeLandTextAdByUserIdAndAdId = async (req, res, next) => {
-  const { userId } = req.params;
-  const { adId } = req.body; // Extract adId from the request body
+  const { userId, adId } = req.params;
 
   try {
     // Step 1: Check if the user exists

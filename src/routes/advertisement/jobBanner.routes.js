@@ -30,6 +30,6 @@ router.get("/getJobBannerAdsByCategory/:category", getAllJobBannerAdsByCategory)
 router.patch("/update/:userId", updateJobBannerAdByUserIdAndJobId);
 
 // Route to delete JobBanner ad by userId
-router.delete("/delete/:userId", deleteJobBannerAdByUserIdAndAdId);
+router.delete("/delete/:userId/:adId", deleteJobBannerAdByUserIdAndAdId);
 
 export default router;
