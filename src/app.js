@@ -52,6 +52,7 @@ import dakshinaRouter from "./routes/dakshina/dakshina.routes.js";
 import panchangRouter from "./routes/panchang/panchang.routes.js";
 import rasifalRouter from "./routes/rasifal/rasifal.routes.js";
 import calenderRouter from "./routes/calender/calender.routes.js";
+import liveTvRouter from "./routes/liveTv/liveTv.routes.js";
 import paymentRouter from "./routes/payment/payment.routes.js";
 import razorpayRouter from "./routes/payment/razorpay.routes.js";
 
@@ -81,11 +82,12 @@ app.use("/good_luck/api/v1/dakshina", dakshinaRouter);
 app.use("/good_luck/api/v1/panchang", panchangRouter);
 app.use("/good_luck/api/v1/rasifal", rasifalRouter);
 app.use("/good_luck/api/v1/calender", calenderRouter);
+app.use("/good_luck/api/v1/liveTv", liveTvRouter);
 app.use("/", paymentRouter);
 app.use("/", razorpayRouter);
 
 app.get("/", (req, res) => {
-  res.send("Welcome to Good Luck API!");
+  res.send("Welcome to Good Luck API! 2");
 });
 
 // Error handling middleware
