@@ -101,7 +101,7 @@ export const createOrder = asyncHandler(async (req, res) => {
     await admin.save();
 
     // Debit the user's wallet
-    user.wallet.balance -= total_price;
+    // user.wallet.balance -= total_price;
     user.wallet.transactionHistory.push({
       transactionId: transaction_id || generateTransactionId(),
       timestamp: Date.now(),
