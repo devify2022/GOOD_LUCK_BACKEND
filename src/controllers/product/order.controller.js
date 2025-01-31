@@ -25,6 +25,7 @@ export const createOrder = asyncHandler(async (req, res) => {
       is_payment_done,
       transaction_id,
       promo_code,
+      isSuperNoteApplied = false,
     } = req.body;
 
     const requiredFields = [
@@ -125,8 +126,10 @@ export const createOrder = asyncHandler(async (req, res) => {
       payment_method,
       is_payment_done,
       transaction_id,
-      promo_code,
+      isPromoCodeApplied: promo_code !== undefined,
+      isSuperNoteApplied,
     });
+    console.log(newOrder);
 
     await newOrder.save();
 

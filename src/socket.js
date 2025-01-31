@@ -20,7 +20,7 @@ import {
 export const setupSocketIO = (server) => {
   const io = new Server(server, {
     cors: {
-      origin: ["http://localhost:3000", "http://192.168.31.227:8081"],
+      origin: ["http://localhost:3000", "http://192.168.29.9:8081"],
       methods: ["GET", "POST"],
       allowedHeaders: ["Content-Type"],
       credentials: true,

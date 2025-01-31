@@ -73,6 +73,14 @@ const orderSchema = new Schema(
     promo_code: {
       type: Number,
     },
+    isPromoCodeApplied: {
+      type: Boolean,
+      default: false,
+    },
+    isSuperNoteApplied: {
+      type: Boolean,
+      default: false,
+    },
     transaction_id: {
       type: String,
       required: function () {
