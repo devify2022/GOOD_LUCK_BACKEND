@@ -9,37 +9,49 @@ import { generateTransactionId } from "../../../utils/generateTNX.js";
 const intervals = {};
 const pausedIntervals = {};
 
-async function deductUserWallet(
-  user,
-  costPerMinute,
-  roomId,
-  chatType,
-  astrologerId
-) {
+// async function deductUserWallet(
+//   user,
+//   costPerMinute,
+//   roomId,
+//   chatType,
+//   astrologerId
+// ) {
+//   if (user.wallet.balance < costPerMinute) {
+//     return { success: false, message: "Insufficient funds" };
+//   }
+
+//   // Generate a transaction ID
+//   const transactionId = generateTransactionId();
+
+//   user.wallet.balance -= costPerMinute;
+//   const transaction = {
+//     timestamp: new Date(),
+//     type: "debit",
+//     debit_type: "chat",
+//     amount: costPerMinute,
+//     description: `Chat session (${chatType}) with Astrologer ID: ${astrologerId}`,
+//     reference: `ChatRoom-${roomId}`,
+//     transactionId: transactionId,
+//   };
+//   user.wallet.transactionHistory.push(transaction);
+//   await user.save();
+
+//   return { success: true };
+// }
+
+// Function to update astrologer and admin wallets
+
+async function deductUserWallet(user, costPerMinute) {
   if (user.wallet.balance < costPerMinute) {
     return { success: false, message: "Insufficient funds" };
   }
 
-  // Generate a transaction ID
-  const transactionId = generateTransactionId();
-
-  user.wallet.balance -= costPerMinute;
-  const transaction = {
-    timestamp: new Date(),
-    type: "debit",
-    debit_type: "chat",
-    amount: costPerMinute,
-    description: `Chat session (${chatType}) with Astrologer ID: ${astrologerId}`,
-    reference: `ChatRoom-${roomId}`,
-    transactionId: transactionId,
-  };
-  user.wallet.transactionHistory.push(transaction);
-  await user.save();
+  user.wallet.balance -= costPerMinute; // Deduct balance
+  await user.save(); // Save user without adding a transaction every minute
 
   return { success: true };
 }
 
-// Function to update astrologer and admin wallets
 async function creditAstrologerAndAdmin(astrologer, admin, totalCost, roomId) {
   const transactionId = generateTransactionId();
 
@@ -71,7 +83,10 @@ async function creditAstrologerAndAdmin(astrologer, admin, totalCost, roomId) {
   await admin.save();
 }
 
-// Start chat billing
+//==================================================================================================
+
+const sessionSummary = {}; // Store temporary balances
+
 export async function startChat(io, roomId, chatType, userId, astrologerId) {
   try {
     const astrologer = await Astrologer.findById(astrologerId);
@@ -87,6 +102,14 @@ export async function startChat(io, roomId, chatType, userId, astrologerId) {
 
     const costPerMinute = await getChatPrice(chatType, astrologerId);
 
+    // Initialize session summary
+    sessionSummary[roomId] = {
+      totalDeducted: 0,
+      totalAstrologerEarnings: 0,
+      totalAdminEarnings: 0,
+    };
+
+    // First deduction
     const firstDeduction = await deductUserWallet(
       user,
       costPerMinute,
@@ -94,28 +117,21 @@ export async function startChat(io, roomId, chatType, userId, astrologerId) {
       chatType,
       astrologerId
     );
-
     if (!firstDeduction.success) {
-      io.to(roomId).emit("chat-error", {
-        message: firstDeduction.message,
-      });
+      io.to(roomId).emit("chat-error", { message: firstDeduction.message });
       io.to(roomId).emit("chat-end", { reason: firstDeduction.message });
-
       astrologer.status = "available";
       await astrologer.save();
       return;
     }
 
-    await creditAstrologerAndAdmin(astrologer, admin, costPerMinute, roomId);
-    // Record the start time
-    const chatRequest = await ChatRequest.findOne({ roomId });
-    if (chatRequest) {
-      chatRequest.startTime = moment().format("DD-MM-YYYY hh:mm A");
-      await chatRequest.save();
-    }
+    // Track totals instead of logging transactions
+    sessionSummary[roomId].totalDeducted += costPerMinute;
+    sessionSummary[roomId].totalAstrologerEarnings +=
+      (60 / 100) * costPerMinute;
+    sessionSummary[roomId].totalAdminEarnings += (40 / 100) * costPerMinute;
 
     let totalTime = 1;
-
     const interval = setInterval(async () => {
       try {
         const deductionResult = await deductUserWallet(
@@ -125,7 +141,6 @@ export async function startChat(io, roomId, chatType, userId, astrologerId) {
           chatType,
           astrologerId
         );
-
         if (!deductionResult.success) {
           io.to(roomId).emit("chat-error", {
             message: deductionResult.message,
@@ -139,12 +154,11 @@ export async function startChat(io, roomId, chatType, userId, astrologerId) {
           return;
         }
 
-        await creditAstrologerAndAdmin(
-          astrologer,
-          admin,
-          costPerMinute,
-          roomId
-        );
+        // Accumulate total deductions and earnings
+        sessionSummary[roomId].totalDeducted += costPerMinute;
+        sessionSummary[roomId].totalAstrologerEarnings +=
+          (60 / 100) * costPerMinute;
+        sessionSummary[roomId].totalAdminEarnings += (40 / 100) * costPerMinute;
 
         totalTime++;
         io.to(roomId).emit("chat-timer", {
@@ -171,27 +185,91 @@ export async function startChat(io, roomId, chatType, userId, astrologerId) {
   }
 }
 
-// End chat billing
+// End chat and log transaction history once
 export async function endChat(io, roomId, sender) {
   if (intervals[roomId]) {
     clearInterval(intervals[roomId]); // Stop the timer
     delete intervals[roomId];
   }
 
-   // Record the end time
-   const chatRequest = await ChatRequest.findOne({ roomId });
-   if (chatRequest) {
-     chatRequest.endTime = moment().format("DD-MM-YYYY hh:mm A");
-     await chatRequest.save();
-   }
- 
+  const chatRequest = await ChatRequest.findOne({ roomId });
+  if (!chatRequest) return;
 
-  // Emit a notification to both user and astrologer
+  chatRequest.endTime = moment().format("DD-MM-YYYY hh:mm A");
+  await chatRequest.save();
+
+  // Retrieve accumulated totals
+  const { totalDeducted, totalAstrologerEarnings, totalAdminEarnings } =
+    sessionSummary[roomId] || {};
+
+  if (totalDeducted > 0) {
+    const transactionId = generateTransactionId();
+
+    // Store only one transaction for the user
+    await User.findByIdAndUpdate(chatRequest.userId, {
+      $push: {
+        "wallet.transactionHistory": {
+          timestamp: new Date(),
+          type: "debit",
+          debit_type: "chat",
+          amount: totalDeducted,
+          description: `Total chat session with Astrologer ID: ${chatRequest.astrologerId}`,
+          reference: `ChatRoom-${roomId}`,
+          transactionId: transactionId,
+        },
+      },
+    });
+
+    // Store one transaction for the astrologer
+    await Astrologer.findByIdAndUpdate(chatRequest.astrologerId, {
+      $inc: {
+        "wallet.balance": totalAstrologerEarnings,
+        total_earning: totalAstrologerEarnings,
+      },
+      $push: {
+        "wallet.transactionHistory": {
+          timestamp: new Date(),
+          type: "credit",
+          credit_type: "chat",
+          amount: totalAstrologerEarnings,
+          description: "Total chat earnings",
+          reference: `ChatRoom-${roomId}`,
+          transactionId: transactionId,
+        },
+      },
+    });
+
+    // Store one transaction for the admin
+    await Admin.findOneAndUpdate(
+      {},
+      {
+        $inc: { "wallet.balance": totalAdminEarnings },
+        $push: {
+          "wallet.transactionHistory": {
+            timestamp: new Date(),
+            type: "credit",
+            credit_type: "chat",
+            amount: totalAdminEarnings,
+            description: "Total chat commission",
+            reference: `ChatRoom-${roomId}`,
+            transactionId: transactionId,
+          },
+        },
+      }
+    );
+  }
+
+  // Emit chat end event
   io.to(roomId).emit("chat-end", {
     reason:
       sender === "user" ? "Chat ended by user" : "Chat ended by astrologer",
   });
+
+  // Cleanup session data
+  delete sessionSummary[roomId];
 }
+
+//==================================================================================================
 
 // Function to pause chat billing
 export function pauseChat(io, roomId) {

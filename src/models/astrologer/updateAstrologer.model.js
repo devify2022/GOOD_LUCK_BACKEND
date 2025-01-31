@@ -62,12 +62,6 @@ const updateRequestAstrologerProfileSchema = new Schema(
       type: Boolean,
       default: false,
     },
-    otp: {
-      type: Number,
-    },
-    otpExpiresAt: {
-      type: Date,
-    },
   },
   { timestamps: true }
 );

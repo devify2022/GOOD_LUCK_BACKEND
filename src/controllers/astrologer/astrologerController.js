@@ -318,135 +318,145 @@ export const updateRequestAstrologerProfile = asyncHandler(async (req, res) => {
 
   let updateRequest = await UpdateAstrologerProfile.findOne({ phone });
 
-  if (astrologer) {
-    if (!updateRequest) {
-      updateRequest = new UpdateAstrologerProfile({
-        Fname,
-        Lname,
-        phone,
-        specialisation,
-        chat_price,
-        video_price,
-        call_price,
-        years_of_experience,
-        profile_picture,
-        description,
-        language,
-        certifications,
-        otp: generateOtp(),
-      });
-      await updateRequest.save();
-    } else {
-      const newOtp = generateOtp();
-      updateRequest.setOtp(newOtp);
-      await updateRequest.save();
-    }
+  if (!updateRequest) {
+    updateRequest = new UpdateAstrologerProfile({
+      astrologerId: astrologer._id, // Associate request with astrologer
+      Fname,
+      Lname,
+      phone,
+      specialisation,
+      chat_price,
+      video_price,
+      call_price,
+      years_of_experience,
+      profile_picture,
+      description,
+      language,
+      certifications,
+    });
+  } else {
+    Object.assign(updateRequest, {
+      Fname,
+      Lname,
+      phone,
+      specialisation,
+      chat_price,
+      video_price,
+      call_price,
+      years_of_experience,
+      profile_picture,
+      description,
+      language,
+      certifications,
+    });
   }
+
+  await updateRequest.save();
 
   return res
     .status(200)
     .json(
       new ApiResponse(
         200,
-        { otp: updateRequest.otp },
-        "OTP sent for profile update verification"
+        updateRequest,
+        "Profile update request submitted successfully"
       )
     );
 });
 
-// Verify OTP and update the astrologer profile
-export const verifyAstrologerProfileUpdateOTP = asyncHandler(
-  async (req, res) => {
-    const { id } = req.params;
-    const { phone, otp } = req.body;
+// // Verify OTP and update the astrologer profile
+// export const verifyAstrologerProfileUpdateOTP = asyncHandler(
+//   async (req, res) => {
+//     const { id } = req.params;
+//     const { phone, otp } = req.body;
 
-    if (!phone || !otp) {
-      throw new ApiError(400, "Phone number and OTP are required");
-    }
+//     if (!phone || !otp) {
+//       throw new ApiError(400, "Phone number and OTP are required");
+//     }
 
-    const updateRequest = await UpdateAstrologerProfile.findOne({ phone });
-    if (!updateRequest) {
-      throw new ApiError(404, "Profile update request not found");
-    }
+//     const updateRequest = await UpdateAstrologerProfile.findOne({ phone });
+//     if (!updateRequest) {
+//       throw new ApiError(404, "Profile update request not found");
+//     }
 
-    if (updateRequest.otp !== otp) {
-      return res.status(400).json(new ApiResponse(400, null, "Invalid OTP"));
-    }
+//     if (updateRequest.otp !== otp) {
+//       return res.status(400).json(new ApiResponse(400, null, "Invalid OTP"));
+//     }
 
-    const astrologer = await Astrologer.findOneAndUpdate(
-      { authId: id },
-      {
-        Fname: updateRequest.Fname,
-        Lname: updateRequest.Lname,
-        phone: updateRequest.phone,
-        specialisation: updateRequest.specialisation,
-        chat_price: updateRequest.chat_price,
-        video_price: updateRequest.video_price,
-        call_price: updateRequest.call_price,
-        years_of_experience: updateRequest.years_of_experience,
-        profile_picture: updateRequest.profile_picture,
-        description: updateRequest.description,
-        language: updateRequest.language,
-        certifications: updateRequest.certifications,
-      },
-      { new: true }
-    );
+//     const astrologer = await Astrologer.findOneAndUpdate(
+//       { authId: id },
+//       {
+//         Fname: updateRequest.Fname,
+//         Lname: updateRequest.Lname,
+//         phone: updateRequest.phone,
+//         specialisation: updateRequest.specialisation,
+//         chat_price: updateRequest.chat_price,
+//         video_price: updateRequest.video_price,
+//         call_price: updateRequest.call_price,
+//         years_of_experience: updateRequest.years_of_experience,
+//         profile_picture: updateRequest.profile_picture,
+//         description: updateRequest.description,
+//         language: updateRequest.language,
+//         certifications: updateRequest.certifications,
+//       },
+//       { new: true }
+//     );
 
-    if (!astrologer) {
-      throw new ApiError(404, "Astrologer profile not found");
-    }
+//     if (!astrologer) {
+//       throw new ApiError(404, "Astrologer profile not found");
+//     }
 
-    const authRecord = await Auth.findByIdAndUpdate(
-      id,
-      {
-        Fname: updateRequest.Fname,
-        Lname: updateRequest.Lname,
-        phone: updateRequest.phone,
-        isVerified: true,
-      },
-      { new: true }
-    );
+//     const authRecord = await Auth.findByIdAndUpdate(
+//       id,
+//       {
+//         Fname: updateRequest.Fname,
+//         Lname: updateRequest.Lname,
+//         phone: updateRequest.phone,
+//         isVerified: true,
+//       },
+//       { new: true }
+//     );
 
-    if (!authRecord) {
-      throw new ApiError(404, "Auth record not found");
-    }
+//     if (!authRecord) {
+//       throw new ApiError(404, "Auth record not found");
+//     }
 
-    // Update User record
-    const userRecord = await User.findOneAndUpdate(
-      { authId: id },
-      {
-        Fname: updateRequest.Fname,
-        Lname: updateRequest.Lname,
-        phone: updateRequest.phone,
-        isVerified: true,
-        years_of_experience: updateRequest.years_of_experience,
-        profile_picture: updateRequest.profile_picture,
-        description: updateRequest.description,
-        language: updateRequest.language,
-        certifications: updateRequest.certifications,
-      },
-      { new: true }
-    );
+//     // Update User record
+//     const userRecord = await User.findOneAndUpdate(
+//       { authId: id },
+//       {
+//         Fname: updateRequest.Fname,
+//         Lname: updateRequest.Lname,
+//         phone: updateRequest.phone,
+//         isVerified: true,
+//         years_of_experience: updateRequest.years_of_experience,
+//         profile_picture: updateRequest.profile_picture,
+//         description: updateRequest.description,
+//         language: updateRequest.language,
+//         certifications: updateRequest.certifications,
+//       },
+//       { new: true }
+//     );
 
-    if (!userRecord) {
-      throw new ApiError(404, "User record not found");
-    }
+//     if (!userRecord) {
+//       throw new ApiError(404, "User record not found");
+//     }
 
-    await updateRequest.deleteOne();
+//     await updateRequest.deleteOne();
 
-    return res.status(200).json(
-      new ApiResponse(
-        200,
-        {
-          astrologer,
-          authRecord,
-          userRecord,
-        },
-        "Astrologer updated successfully"
-      )
-    );
-  }
-);
+//     return res.status(200).json(
+//       new ApiResponse(
+//         200,
+//         {
+//           astrologer,
+//           authRecord,
+//           userRecord,
+//         },
+//         "Astrologer updated successfully"
+//       )
+//     );
+//   }
+// );
 
 // Get all update request astrologers
 export const getAllUpdateRequestAstrologers = asyncHandler(async (req, res) => {
@@ -487,6 +497,56 @@ export const getUpdateRequestAstrologerById = asyncHandler(async (req, res) => {
         200,
         updateRequest,
         "Update request astrologer retrieved successfully"
+      )
+    );
+});
+
+// Approve Astrologer Update Request
+export const approveUpdateRequest = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+
+  // Find the update request by ID
+  const updateRequest = await UpdateAstrologerProfile.findById(id);
+  if (!updateRequest) {
+    throw new ApiError(404, "Update request not found");
+  }
+
+  // Find the astrologer by phone number
+  const astrologer = await Astrologer.findOne({ phone: updateRequest.phone });
+  if (!astrologer) {
+    throw new ApiError(404, "Astrologer not found");
+  }
+
+  // Update the astrologer profile with the new data
+  Object.assign(astrologer, {
+    Fname: updateRequest.Fname,
+    Lname: updateRequest.Lname,
+    phone: updateRequest.phone,
+    specialisation: updateRequest.specialisation,
+    chat_price: updateRequest.chat_price,
+    video_price: updateRequest.video_price,
+    call_price: updateRequest.call_price,
+    years_of_experience: updateRequest.years_of_experience,
+    profile_picture: updateRequest.profile_picture,
+    description: updateRequest.description,
+    language: updateRequest.language,
+    certifications: updateRequest.certifications,
+    adhar_card: updateRequest.adhar_card,
+    pan_card: updateRequest.pan_card,
+  });
+
+  await astrologer.save();
+
+  // Delete the update request after successful update
+  await UpdateAstrologerProfile.findByIdAndDelete(id);
+
+  return res
+    .status(200)
+    .json(
+      new ApiResponse(
+        200,
+        astrologer,
+        "Astrologer profile updated successfully"
       )
     );
 });
@@ -961,4 +1021,3 @@ export const getWalletTransactionHistoryById = asyncHandler(
       );
   }
 );
-
