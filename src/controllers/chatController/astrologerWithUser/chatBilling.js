@@ -9,38 +9,7 @@ import { generateTransactionId } from "../../../utils/generateTNX.js";
 const intervals = {};
 const pausedIntervals = {};
 
-// async function deductUserWallet(
-//   user,
-//   costPerMinute,
-//   roomId,
-//   chatType,
-//   astrologerId
-// ) {
-//   if (user.wallet.balance < costPerMinute) {
-//     return { success: false, message: "Insufficient funds" };
-//   }
-
-//   // Generate a transaction ID
-//   const transactionId = generateTransactionId();
-
-//   user.wallet.balance -= costPerMinute;
-//   const transaction = {
-//     timestamp: new Date(),
-//     type: "debit",
-//     debit_type: "chat",
-//     amount: costPerMinute,
-//     description: `Chat session (${chatType}) with Astrologer ID: ${astrologerId}`,
-//     reference: `ChatRoom-${roomId}`,
-//     transactionId: transactionId,
-//   };
-//   user.wallet.transactionHistory.push(transaction);
-//   await user.save();
-
-//   return { success: true };
-// }
-
-// Function to update astrologer and admin wallets
-
+// Function For deduct wallet balance from user
 async function deductUserWallet(user, costPerMinute) {
   if (user.wallet.balance < costPerMinute) {
     return { success: false, message: "Insufficient funds" };
