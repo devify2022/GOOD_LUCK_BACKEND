@@ -210,6 +210,8 @@ const auth_request_verify_OTP = asyncHandler(async (req, res) => {
         phone: newUser.phone,
         accessToken,
         refreshToken,
+        superNote: newUser ? newUser.superNote : null,
+        promo_code: newUser ? newUser.promo_code : null,
       },
       "OTP Verified and new user created"
     )
@@ -363,11 +365,20 @@ const login_verify_OTP = asyncHandler(async (req, res) => {
         200,
         {
           userId: userRecord?._id,
-          astrologer: astrologer || null,
+          astrologer: astrologer
+            ? {
+                ...astrologer.toObject(),
+                wallet: {
+                  balance: astrologer.wallet.balance,
+                  _id: astrologer.wallet._id,
+                },
+              }
+            : null,
           role: authRecord.user_type,
           phone: authRecord.phone,
           accessToken,
           refreshToken,
+          superNote: userRecord ? userRecord.superNote : null,
           matrimonyID: matrimonyProfile ? matrimonyProfile.userId : null,
           datingID: datingProfile ? datingProfile.userId : null,
           isMatrimonySubscribed: userRecord.matrimonySubscription
@@ -1185,5 +1196,5 @@ export {
   getAstrologersAndReviewsByUserId,
   buyMatrimonySubscription,
   buyDatingSubscription,
-  checkPromoCode
+  checkPromoCode,
 };

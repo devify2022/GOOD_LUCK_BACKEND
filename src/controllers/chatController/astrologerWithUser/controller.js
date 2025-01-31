@@ -551,11 +551,16 @@ export const getAstrologerChatHistory = asyncHandler(async (req, res) => {
 
   // Find chat history where the userId and astrologerId match
   const chatHistory = await AstrologerChat.find({
-    $or: [
-      { "messages.senderId": userId, "messages.senderModel": "User" },
+    $and: [
       {
-        "messages.senderId": astrologerId,
-        "messages.senderModel": "Astrologer",
+        messages: {
+          $elemMatch: { senderId: userId, senderModel: "User" },
+        },
+      },
+      {
+        messages: {
+          $elemMatch: { senderId: astrologerId, senderModel: "Astrologer" },
+        },
       },
     ],
   });
