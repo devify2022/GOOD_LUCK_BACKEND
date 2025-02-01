@@ -16,7 +16,7 @@ import {
 const router = Router();
 
 router.route("/createDatingProfile/:id").post(createDatingProfile);
-router.route("/").get(getAllDatingProfiles);
+router.route("/getAll/:id").get(getAllDatingProfiles);
 router.route("/male/:userId").get(getRandomMaleProfiles);
 router.route("/female/:userId").get(getRandomFemaleProfiles);
 router.route("/:id").get(getDatingProfileByUserId);

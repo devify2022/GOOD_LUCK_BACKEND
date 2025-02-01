@@ -113,7 +113,6 @@ export const createMatrimonyProfile = asyncHandler(async (req, res) => {
   }
 });
 
-
 // Get all Matrimony Profiles
 export const getAllMatrimonyProfile = asyncHandler(async (req, res) => {
   const matrimonyProfiles = await Matrimony.find();
@@ -124,12 +123,21 @@ export const getAllMatrimonyProfile = asyncHandler(async (req, res) => {
       .json(new ApiResponse(200, [], "No matrimony profiles found"));
   }
 
+  const { id } = req.params;
+
+  const ownmatrimonyProfile = await Matrimony.findOne({ userId: id });
+
+  const filteredMatrimonyProfiles = matrimonyProfiles.filter(
+    (profile) =>
+      profile.userId !== ownmatrimonyProfile.userId &&
+      profile.searching_for !== ownmatrimonyProfile.searching_for
+  );
   return res
     .status(200)
     .json(
       new ApiResponse(
         200,
-        matrimonyProfiles,
+        filteredMatrimonyProfiles,
         "Matrimony profiles retrieved successfully"
       )
     );
