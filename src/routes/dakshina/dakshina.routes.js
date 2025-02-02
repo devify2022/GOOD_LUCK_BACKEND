@@ -4,6 +4,7 @@ import {
   deleteDakshinaById,
   getAllDakshinas,
   getDakshinasByDay,
+  makePayment,
   updateDakshinaById,
 } from "../../controllers/Dakshina/dakshina.controller.js";
 
@@ -13,6 +14,7 @@ router.post("/create", createDakshina);
 router.get("/getAll", getAllDakshinas);
 router.get("/get/:day", getDakshinasByDay);
 router.patch("/update/:id", updateDakshinaById);
+router.post("/payment", makePayment);
 router.delete("/delete/:id", deleteDakshinaById);
 
 export default router;
