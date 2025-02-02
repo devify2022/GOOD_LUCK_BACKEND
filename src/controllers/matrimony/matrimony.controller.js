@@ -114,33 +114,94 @@ export const createMatrimonyProfile = asyncHandler(async (req, res) => {
 });
 
 // Get all Matrimony Profiles
-export const getAllMatrimonyProfile = asyncHandler(async (req, res) => {
-  const matrimonyProfiles = await Matrimony.find();
+// export const getAllMatrimonyProfile = asyncHandler(async (req, res) => {
+//   try {
+//     const matrimonyProfiles = await Matrimony.find();
 
-  if (!matrimonyProfiles.length) {
+//     if (!matrimonyProfiles.length) {
+//       return res
+//         .status(200)
+//         .json(new ApiResponse(200, [], "No matrimony profiles found"));
+//     }
+
+//     const { id } = req.params;
+
+//     const ownMatrimonyProfile = await Matrimony.findOne({ userId: id });
+
+//     if (!ownMatrimonyProfile) {
+//       return res
+//         .status(404)
+//         .json(new ApiResponse(404, [], "User profile not found"));
+//     }
+
+//     const filteredMatrimonyProfiles = matrimonyProfiles.filter(
+//       (profile) =>
+//         profile.userId !== ownMatrimonyProfile.userId && // Exclude own profile
+//         profile.searching_for !== ownMatrimonyProfile.searching_for && // Ensure profile is looking for the opposite match
+//         !ownMatrimonyProfile.likedProfiles.includes(profile.userId) && // Exclude liked profiles
+//         !profile.pending_likes_id.includes(ownMatrimonyProfile.userId) // Exclude profiles where user is in their pending likes
+//     );
+
+//     return res
+//       .status(200)
+//       .json(
+//         new ApiResponse(
+//           200,
+//           filteredMatrimonyProfiles,
+//           "Matrimony profiles retrieved successfully"
+//         )
+//       );
+//   } catch (error) {
+//     return res
+//       .status(500)
+//       .json(
+//         new ApiResponse(500, [], "An error occurred while retrieving profiles")
+//       );
+//   }
+// });
+
+// Get all Matrimony Profiles
+export const getAllMatrimonyProfile = asyncHandler(async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // Find the user's own matrimony profile
+    const ownMatrimonyProfile = await Matrimony.findOne({ userId: id });
+
+    if (!ownMatrimonyProfile) {
+      return res
+        .status(404)
+        .json(new ApiResponse(404, [], "User profile not found"));
+    }
+
+    // Use aggregation pipeline for filtering
+    const filteredMatrimonyProfiles = await Matrimony.aggregate([
+      {
+        $match: {
+          userId: { $ne: ownMatrimonyProfile.userId }, // Exclude own profile
+          searching_for: { $ne: ownMatrimonyProfile.searching_for }, // Ensure profile is looking for the opposite match
+          userId: { $nin: ownMatrimonyProfile.likedProfiles }, // Exclude liked profiles
+          pending_likes_id: { $nin: [ownMatrimonyProfile.userId] }, // Exclude profiles where user is in their pending likes
+        },
+      },
+    ]);
+
     return res
       .status(200)
-      .json(new ApiResponse(200, [], "No matrimony profiles found"));
+      .json(
+        new ApiResponse(
+          200,
+          filteredMatrimonyProfiles,
+          "Matrimony profiles retrieved successfully"
+        )
+      );
+  } catch (error) {
+    return res
+      .status(500)
+      .json(
+        new ApiResponse(500, [], "An error occurred while retrieving profiles")
+      );
   }
-
-  const { id } = req.params;
-
-  const ownmatrimonyProfile = await Matrimony.findOne({ userId: id });
-
-  const filteredMatrimonyProfiles = matrimonyProfiles.filter(
-    (profile) =>
-      profile.userId !== ownmatrimonyProfile.userId &&
-      profile.searching_for !== ownmatrimonyProfile.searching_for
-  );
-  return res
-    .status(200)
-    .json(
-      new ApiResponse(
-        200,
-        filteredMatrimonyProfiles,
-        "Matrimony profiles retrieved successfully"
-      )
-    );
 });
 
 // Get Matrimony Profile by User ID

@@ -122,7 +122,25 @@ export const createDatingProfile = asyncHandler(async (req, res) => {
 // Get All Dating Profiles
 export const getAllDatingProfiles = asyncHandler(async (req, res) => {
   try {
-    const datingProfiles = await Dating.find();
+    const { id } = req.params; // Current user's ID
+
+    // Fetch the current user's dating profile
+    const currentUserProfile = await Dating.findOne({ userId: id });
+
+    if (!currentUserProfile) {
+      return res
+        .status(404)
+        .json(new ApiResponse(404, null, "Current user profile not found"));
+    }
+
+    // Get the list of profiles the user has already liked
+    const sentLikes = currentUserProfile.sent_likes_id || [];
+
+    // Fetch all dating profiles excluding the current user's profile
+    const datingProfiles = await Dating.find({
+      userId: { $ne: id }, // Exclude the current user's own profile
+      looking_for: "male", // Ensure the profile is looking for males
+    });
 
     if (!datingProfiles.length) {
       return res
@@ -130,17 +148,13 @@ export const getAllDatingProfiles = asyncHandler(async (req, res) => {
         .json(new ApiResponse(200, [], "No dating profiles found"));
     }
 
-    const { id } = req.params;
-
-    const owndatingProfile = await Dating.findOne({ userId: id });
-
-    console.log(owndatingProfile, id);
-
-    const filteredDatingProfiles = datingProfiles.filter(
-      (profile) =>
-        profile.userId !== owndatingProfile.userId &&
-        profile.looking_for !== owndatingProfile.looking_for
-    );
+    // Filter out profiles the user has already liked
+    const filteredDatingProfiles = datingProfiles.filter((profile) => {
+      return (
+        !sentLikes.includes(profile.userId) && // Exclude profiles the user has already liked
+        !profile.pending_likes_id.includes(id) // Exclude profiles where the user's ID is in their pending_likes_id
+      );
+    });
 
     res
       .status(200)
@@ -327,6 +341,7 @@ export const getRandomFemaleProfiles = asyncHandler(async (req, res) => {
       .json(new ApiResponse(500, null, "An unexpected error occurred"));
   }
 });
+
 // Send Like API for Dating Profile with senderId and receiverId from params
 export const sendLikeDating = asyncHandler(async (req, res) => {
   const { senderId, receiverId } = req.params;
