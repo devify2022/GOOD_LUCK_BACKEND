@@ -130,12 +130,24 @@ export const getAllDatingProfiles = asyncHandler(async (req, res) => {
         .json(new ApiResponse(200, [], "No dating profiles found"));
     }
 
+    const { id } = req.params;
+
+    const owndatingProfile = await Dating.findOne({ userId: id });
+
+    console.log(owndatingProfile, id);
+
+    const filteredDatingProfiles = datingProfiles.filter(
+      (profile) =>
+        profile.userId !== owndatingProfile.userId &&
+        profile.looking_for !== owndatingProfile.looking_for
+    );
+
     res
       .status(200)
       .json(
         new ApiResponse(
           200,
-          datingProfiles,
+          filteredDatingProfiles,
           "Dating profiles retrieved successfully"
         )
       );
