@@ -113,7 +113,6 @@ export const createMatrimonyProfile = asyncHandler(async (req, res) => {
   }
 });
 
-
 // Get all Matrimony Profiles
 export const getAllMatrimonyProfile = asyncHandler(async (req, res) => {
   const matrimonyProfiles = await Matrimony.find();
@@ -203,30 +202,44 @@ export const updateMatrimonyProfileByUserId = asyncHandler(async (req, res) => {
 export const getRandomGrooms = asyncHandler(async (req, res) => {
   const { userId } = req.params;
 
+  // Find the requesting user's profile
+  const userProfile = await Matrimony.findOne({ userId });
+
+  if (!userProfile) {
+    return res
+      .status(404)
+      .json(new ApiResponse(404, null, "User profile not found"));
+  }
+
   try {
-    // Find the requesting user's profile
-    const userProfile = await Matrimony.findOne({ userId });
+    // Get the IDs of profiles the user has liked
+    const likedProfileIds = userProfile.sent_likes_id || [];
 
-    if (!userProfile) {
-      return res
-        .status(404)
-        .json(new ApiResponse(404, null, "User profile not found"));
-    }
+    // Get the IDs of profiles where the user is in their pending_likes_id
+    const pendingLikeProfiles = await Matrimony.find({
+      pending_likes_id: { $in: [userId] },
+    }).select("_id");
 
-    // Get the list of liked profiles
-    const likedProfiles = userProfile.sent_likes_id || [];
+    const pendingLikeIdsArray = pendingLikeProfiles.map(
+      (profile) => profile._id
+    );
 
-    // Fetch 5 random groom profiles excluding liked profiles
+    // Fetch 5 random groom profiles excluding:
+    // 1. Profiles the user has liked
+    // 2. The user's own profile
+    // 3. Profiles where the user is in their pending_likes_id
+    // 4. Ensure the profile is looking for a bride (since the user is searching for a groom)
     const randomGrooms = await Matrimony.aggregate([
       {
         $match: {
-          searching_for: "groom",
           _id: {
-            $nin: likedProfiles.map((id) => new mongoose.Types.ObjectId(id)), // Ensure proper ObjectId conversion
-          },
+            $nin: [...likedProfileIds, userProfile._id, ...pendingLikeIdsArray],
+          }, // Exclude liked, own, and pending profiles
+          searching_for:
+            userProfile.searching_for === "groom" ? "bride" : "groom", // Ensure the profile matches the user's search criteria
         },
       },
-      { $sample: { size: 5 } },
+      { $sample: { size: 5 } }, // Get 5 random profiles
       {
         $project: {
           userId: 1,
@@ -249,19 +262,12 @@ export const getRandomGrooms = asyncHandler(async (req, res) => {
       },
     ]);
 
-    if (!randomGrooms.length) {
-      return res
-        .status(404)
-        .json(new ApiResponse(404, null, "No random grooms found"));
-    }
-
     return res
       .status(200)
       .json(
         new ApiResponse(200, randomGrooms, "Random grooms fetched successfully")
       );
   } catch (error) {
-    console.error("Error Fetching Grooms:", error.message);
     return res
       .status(500)
       .json(
@@ -285,16 +291,33 @@ export const getRandomBrides = asyncHandler(async (req, res) => {
 
   try {
     // Get the IDs of profiles the user has liked
-    const likedProfileIds = await Matrimony.find({
-      userId: { $in: userProfile.sent_likes_id || [] },
+    const likedProfileIds = userProfile.sent_likes_id || [];
+
+    // Get the IDs of profiles where the user is in their pending_likes_id
+    const pendingLikeProfiles = await Matrimony.find({
+      pending_likes_id: { $in: [userId] },
     }).select("_id");
 
-    const likedIdsArray = likedProfileIds.map((profile) => profile._id);
+    const pendingLikeIdsArray = pendingLikeProfiles.map(
+      (profile) => profile._id
+    );
 
-    // Fetch 5 random bride profiles excluding the ones the user has liked
+    // Fetch 5 random bride profiles excluding:
+    // 1. Profiles the user has liked
+    // 2. The user's own profile
+    // 3. Profiles where the user is in their pending_likes_id
+    // 4. Ensure the profile is looking for a bride/groom (based on user's search criteria)
     const randomBrides = await Matrimony.aggregate([
-      { $match: { searching_for: "bride", _id: { $nin: likedIdsArray } } },
-      { $sample: { size: 5 } },
+      {
+        $match: {
+          _id: {
+            $nin: [...likedProfileIds, userProfile._id, ...pendingLikeIdsArray],
+          }, // Exclude liked, own, and pending profiles
+          searching_for:
+            userProfile.searching_for === "bride" ? "groom" : "bride", // Ensure the profile matches the user's search criteria
+        },
+      },
+      { $sample: { size: 5 } }, // Get 5 random profiles
       {
         $project: {
           userId: 1,

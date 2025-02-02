@@ -1,3 +1,5 @@
+import { Admin } from "../../models/admin/admin.model.js";
+import { User } from "../../models/auth/user.model.js";
 import { Dakshina } from "../../models/Dakshina/dakshina.model.js";
 import { ApiResponse } from "../../utils/apiResponse.js";
 import { asyncHandler } from "../../utils/asyncHandler.js";
@@ -107,4 +109,76 @@ export const deleteDakshinaById = asyncHandler(async (req, res) => {
     .json(
       new ApiResponse(200, deletedDakshina, "Dakshina deleted successfully")
     );
+});
+
+// POST API for Payment
+export const makePayment = asyncHandler(async (req, res) => {
+  try {
+    const { userId, amount } = req.body;
+
+    // Validate required fields
+    if (!userId || !amount) {
+      return res
+        .status(400)
+        .json(new ApiResponse(400, null, "userId, amount are required"));
+    }
+
+    // Find the user
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json(new ApiResponse(404, null, "User not found"));
+    }
+
+    // Find the admin (assuming there's only one admin for simplicity)
+    const admin = await Admin.findOne();
+    if (!admin) {
+      return res
+        .status(404)
+        .json(new ApiResponse(404, null, "Admin not found"));
+    }
+
+    // Handle debit transaction (user pays admin)
+    // Add amount to admin's wallet
+    admin.wallet.balance += amount;
+
+    // Add transaction to user's transactionHistory
+    user.wallet.transactionHistory.push({
+      timestamp: new Date(),
+      type: "debit",
+      debit_type: "dakshina",
+      amount,
+      reference: null,
+      description: `Payment made to admin`,
+    });
+
+    // Add transaction to admin's transactionHistory
+    admin.wallet.transactionHistory.push({
+      timestamp: new Date(),
+      type: "credit",
+      credit_type: "dakshina",
+      amount,
+      reference: null,
+      description: `Payment received from ${user.Fname} ${user.Lname}`,
+    });
+
+    // Save the updated user and admin documents
+    await user.save();
+    await admin.save();
+
+    return res
+      .status(200)
+      .json(
+        new ApiResponse(
+          200,
+          { success: true },
+          "Payment processed successfully"
+        )
+      );
+  } catch (error) {
+    // Handle unexpected errors
+    console.error("Error processing payment:", error);
+    return res
+      .status(500)
+      .json(new ApiResponse(500, null, "Internal server error"));
+  }
 });

@@ -364,100 +364,6 @@ export const updateRequestAstrologerProfile = asyncHandler(async (req, res) => {
     );
 });
 
-// // Verify OTP and update the astrologer profile
-// export const verifyAstrologerProfileUpdateOTP = asyncHandler(
-//   async (req, res) => {
-//     const { id } = req.params;
-//     const { phone, otp } = req.body;
-
-//     if (!phone || !otp) {
-//       throw new ApiError(400, "Phone number and OTP are required");
-//     }
-
-//     const updateRequest = await UpdateAstrologerProfile.findOne({ phone });
-//     if (!updateRequest) {
-//       throw new ApiError(404, "Profile update request not found");
-//     }
-
-//     if (updateRequest.otp !== otp) {
-//       return res.status(400).json(new ApiResponse(400, null, "Invalid OTP"));
-//     }
-
-//     const astrologer = await Astrologer.findOneAndUpdate(
-//       { authId: id },
-//       {
-//         Fname: updateRequest.Fname,
-//         Lname: updateRequest.Lname,
-//         phone: updateRequest.phone,
-//         specialisation: updateRequest.specialisation,
-//         chat_price: updateRequest.chat_price,
-//         video_price: updateRequest.video_price,
-//         call_price: updateRequest.call_price,
-//         years_of_experience: updateRequest.years_of_experience,
-//         profile_picture: updateRequest.profile_picture,
-//         description: updateRequest.description,
-//         language: updateRequest.language,
-//         certifications: updateRequest.certifications,
-//       },
-//       { new: true }
-//     );
-
-//     if (!astrologer) {
-//       throw new ApiError(404, "Astrologer profile not found");
-//     }
-
-//     const authRecord = await Auth.findByIdAndUpdate(
-//       id,
-//       {
-//         Fname: updateRequest.Fname,
-//         Lname: updateRequest.Lname,
-//         phone: updateRequest.phone,
-//         isVerified: true,
-//       },
-//       { new: true }
-//     );
-
-//     if (!authRecord) {
-//       throw new ApiError(404, "Auth record not found");
-//     }
-
-//     // Update User record
-//     const userRecord = await User.findOneAndUpdate(
-//       { authId: id },
-//       {
-//         Fname: updateRequest.Fname,
-//         Lname: updateRequest.Lname,
-//         phone: updateRequest.phone,
-//         isVerified: true,
-//         years_of_experience: updateRequest.years_of_experience,
-//         profile_picture: updateRequest.profile_picture,
-//         description: updateRequest.description,
-//         language: updateRequest.language,
-//         certifications: updateRequest.certifications,
-//       },
-//       { new: true }
-//     );
-
-//     if (!userRecord) {
-//       throw new ApiError(404, "User record not found");
-//     }
-
-//     await updateRequest.deleteOne();
-
-//     return res.status(200).json(
-//       new ApiResponse(
-//         200,
-//         {
-//           astrologer,
-//           authRecord,
-//           userRecord,
-//         },
-//         "Astrologer updated successfully"
-//       )
-//     );
-//   }
-// );
-
 // Get all update request astrologers
 export const getAllUpdateRequestAstrologers = asyncHandler(async (req, res) => {
   const updateRequests = await UpdateAstrologerProfile.find();
@@ -1021,3 +927,50 @@ export const getWalletTransactionHistoryById = asyncHandler(
       );
   }
 );
+
+export const toggleAstrologerStatus = asyncHandler(async (req, res) => {
+  try {
+    const { astrologerId, isActive } = req.body;
+
+    // Validate input
+    if (!astrologerId || typeof isActive !== "boolean") {
+      return res
+        .status(400)
+        .json(
+          new ApiResponse(
+            400,
+            null,
+            "astrologerId and isActive (boolean) are required"
+          )
+        );
+    }
+
+    // Find the astrologer by ID
+    const astrologer = await Astrologer.findById(astrologerId);
+
+    if (!astrologer) {
+      return res
+        .status(404)
+        .json(new ApiResponse(404, null, "Astrologer not found"));
+    }
+
+    // Update isActive status
+    astrologer.isActive = isActive;
+    await astrologer.save();
+
+    return res
+      .status(200)
+      .json(
+        new ApiResponse(
+          200,
+          { isActive: astrologer.isActive },
+          "Astrologer status updated successfully"
+        )
+      );
+  } catch (error) {
+    console.error("Error updating astrologer status:", error);
+    return res
+      .status(500)
+      .json(new ApiResponse(500, null, "Internal Server Error", error.message));
+  }
+});

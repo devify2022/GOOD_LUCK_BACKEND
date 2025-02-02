@@ -18,6 +18,7 @@ import {
   getWalletTransactionHistoryById,
   giveReviewToAstrologer,
   rejectAstrologer,
+  toggleAstrologerStatus,
   updateRequestAstrologerProfile,
 } from "../../controllers/astrologer/astrologerController.js";
 
@@ -42,6 +43,7 @@ router.get("/wallet-balance/:id", getWalletBalanceById);
 router.get("/transaction-history/:id", getWalletTransactionHistoryById);
 router.post("/post-review/:id", giveReviewToAstrologer);
 router.get("/getall-reviews/:id", getAllReviewsByAstrologerId);
+router.patch("/toggle", toggleAstrologerStatus);
 
 
 export default router;

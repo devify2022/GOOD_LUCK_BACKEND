@@ -278,12 +278,17 @@ export const getRandomFemaleProfiles = asyncHandler(async (req, res) => {
       return res.status(404).json(new ApiResponse(404, null, "User not found"));
     }
 
+    const sentLikes = user.sent_likes_id || [];
+    const pendingLikes = user.pending_likes_id || [];
+
     // Get random female profiles excluding already liked profiles
     const randomFemaleProfiles = await Dating.aggregate([
       {
         $match: {
-          _id: { $nin: user.sent_likes_id }, // Exclude profiles already liked
-          looking_for: "female",
+          _id: { $nin: sentLikes }, // Exclude profiles already liked
+          _id: { $ne: user._id }, // Exclude the current user's own profile
+          pending_likes_id: { $nin: [userId] }, // Exclude profiles where the user's ID is in their pending_likes_id
+          looking_for: "female", // Ensure the profile is looking for females
         },
       },
       { $sample: { size: 5 } }, // Randomly pick up to 5 profiles
@@ -310,7 +315,6 @@ export const getRandomFemaleProfiles = asyncHandler(async (req, res) => {
       .json(new ApiResponse(500, null, "An unexpected error occurred"));
   }
 });
-
 // Send Like API for Dating Profile with senderId and receiverId from params
 export const sendLikeDating = asyncHandler(async (req, res) => {
   const { senderId, receiverId } = req.params;
