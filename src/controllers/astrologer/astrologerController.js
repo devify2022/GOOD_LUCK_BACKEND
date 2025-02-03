@@ -822,6 +822,7 @@ export const giveReviewToAstrologer = asyncHandler(async (req, res) => {
         .json(new ApiResponse(400, null, "Rating must be between 1 and 5"));
     }
 
+    const user = await User.findById(userId);
     // Find the astrologer by ID
     const astrologer = await Astrologer.findById(id);
     if (!astrologer) {
@@ -835,6 +836,9 @@ export const giveReviewToAstrologer = asyncHandler(async (req, res) => {
       userId,
       rating,
       comment,
+      Fname: user.Fname,
+      Lname: user.Lname,
+      profile_picture: user.profile_picture,
     };
 
     astrologer.reviews.push(newReview);
