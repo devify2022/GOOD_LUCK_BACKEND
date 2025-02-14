@@ -90,11 +90,11 @@ const matrimonySchema = new Schema(
     },
     whatsappNumber: {
       type: String,
-      required: true,
+      // required: true,
     },
     facebookLink: {
       type: String,
-      required: true,
+      // required: true,
     },
     isVerified: {
       type: Boolean,

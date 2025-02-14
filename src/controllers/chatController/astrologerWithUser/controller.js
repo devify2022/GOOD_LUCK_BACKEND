@@ -20,6 +20,7 @@ import AgoraAccessToken from "agora-access-token";
 export async function handleChatRequest(io, data, socket) {
   try {
     const { userId, astrologerId, chatType } = data;
+    console.log(userId, astrologerId, chatType);
 
     // Retrieve the astrologer's details to get the socket ID and status
     const astrologer = await Astrologer.findById(astrologerId);
@@ -54,9 +55,13 @@ export async function handleChatRequest(io, data, socket) {
         .emit("chat-error", { message: "Insufficient funds." });
     }
 
+    console.log(costPerMinute);
+
     // Save the chat request in the database
     const chatRequest = new ChatRequest({ userId, astrologerId, chatType });
     await chatRequest.save();
+
+    console.log(chatRequest);
 
     // Notify the astrologer about the incoming chat request using their socket ID
     console.log(
@@ -66,6 +71,9 @@ export async function handleChatRequest(io, data, socket) {
       requestId: chatRequest._id,
       userId,
       chatType,
+      Fname: user?.Fname,
+      Lname: user?.Lname,
+      profile_picture: user?.profile_picture,
     });
 
     // // Notify the astrologer about the incoming chat request using their socket ID
