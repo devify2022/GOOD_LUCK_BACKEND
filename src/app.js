@@ -86,7 +86,7 @@ app.use("/", paymentRouter);
 app.use("/", razorpayRouter);
 
 app.get("/", (req, res) => {
-  res.send("Welcome to Good Luck API! 2");
+  res.send("Welcome to Good Luck API !");
 });
 
 // Error handling middleware
