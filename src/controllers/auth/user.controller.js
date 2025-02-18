@@ -307,15 +307,151 @@ const loginUser = asyncHandler(async (req, res) => {
 });
 
 // Verify Existing User OTP
+// const login_verify_OTP = asyncHandler(async (req, res) => {
+//   try {
+//     const { phone, otp, verificationId } = req.body;
+
+//     // Check if phone and OTP are provided
+//     if (!phone || !otp) {
+//       return res
+//         .status(400)
+//         .json(new ApiResponse(400, null, "Phone number and OTP are required"));
+//     }
+
+//     // Validate phone number format
+//     if (!validatePhoneNumber(phone)) {
+//       return res
+//         .status(400)
+//         .json(new ApiResponse(400, null, "Invalid phone number format"));
+//     }
+
+//     // Fetch user records
+//     const authRecord = await Auth.findOne({ phone });
+//     if (!authRecord) {
+//       return res.status(404).json(new ApiResponse(404, null, "User not found"));
+//     }
+
+//     const userRecord = await User.findOne({ phone });
+//     const astrologer = await Astrologer.findOne({ phone });
+
+//     // Validate the OTP using the `validateOTP` function
+//     const otpValidationResponse = await validateOTP(phone, verificationId, otp);
+//     if (!otpValidationResponse.success) {
+//       return res
+//         .status(201)
+//         .json(new ApiResponse(201, otpValidationResponse.data, "Invalid OTP"));
+//     }
+
+//     // Generate access and refresh tokens
+//     const { accessToken, refreshToken } = await generateAccessAndRefreshToken(
+//       authRecord._id
+//     );
+
+//     // Mark the user as verified and clear OTP-related fields
+//     authRecord.isVerified = true;
+//     authRecord.otp = "";
+//     authRecord.otpExpiresAt = null;
+//     await authRecord.save();
+
+//     // Fetch Matrimony and Dating profile IDs if they exist
+//     const matrimonyProfile = await Matrimony.findOne({
+//       authId: authRecord._id,
+//     });
+//     const datingProfile = await Dating.findOne({ authId: authRecord._id });
+
+//     // Send response with user data
+//     return res.status(200).json(
+//       new ApiResponse(
+//         200,
+//         {
+//           userId: userRecord?._id,
+//           astrologer: astrologer
+//             ? {
+//                 ...astrologer.toObject(),
+//                 wallet: {
+//                   balance: astrologer.wallet.balance,
+//                   _id: astrologer.wallet._id,
+//                 },
+//               }
+//             : null,
+//           role: authRecord.user_type,
+//           phone: authRecord.phone,
+//           accessToken,
+//           refreshToken,
+//           superNote: userRecord ? userRecord.superNote : null,
+//           matrimonyID: matrimonyProfile ? matrimonyProfile.userId : null,
+//           datingID: datingProfile ? datingProfile.userId : null,
+//           isMatrimonySubscribed: userRecord.matrimonySubscription
+//             ? userRecord.matrimonySubscription.isSubscribed
+//             : false,
+//           isDatingSubscribed: userRecord?.datingSubscription
+//             ? userRecord.datingSubscription.isSubscribed
+//             : false,
+//           userDetails: userRecord
+//             ? {
+//                 Fname: userRecord.Fname,
+//                 Lname: userRecord.Lname,
+//                 gender: userRecord.gender,
+//                 profile_picture: userRecord.profile_picture,
+//                 date_of_birth: userRecord.date_of_birth,
+//               }
+//             : null,
+//           ads_subsCription: userRecord?.adSubscription
+//             ? {
+//                 isSubscribed: userRecord.adSubscription.isSubscribed,
+//                 StartDate: userRecord.adSubscription.startDate,
+//                 EndDate: userRecord.adSubscription.endDate,
+//                 isPromoApplied: userRecord.adSubscription.isPromoApplied,
+//                 plan: userRecord.adSubscription.price,
+//               }
+//             : null,
+//           matrimony_subsCription: userRecord?.matrimonySubscription
+//             ? {
+//                 isSubscribed: userRecord.matrimonySubscription.isSubscribed,
+//                 StartDate: userRecord.matrimonySubscription.startDate,
+//                 EndDate: userRecord.matrimonySubscription.endDate,
+//                 category: userRecord.matrimonySubscription.category,
+//               }
+//             : null,
+//           dating_subsCription: userRecord?.datingSubscription
+//             ? {
+//                 isSubscribed: userRecord.datingSubscription.isSubscribed,
+//                 StartDate: userRecord.datingSubscription.startDate,
+//                 EndDate: userRecord.datingSubscription.endDate,
+//                 category: userRecord.datingSubscription.category,
+//               }
+//             : null,
+//         },
+//         "OTP Verified"
+//       )
+//     );
+//   } catch (error) {
+//     // Handle unexpected errors
+//     console.error("Error in login_verify_OTP:", error.message || error);
+//     return res
+//       .status(500)
+//       .json(new ApiResponse(500, null, "An unexpected error occurred"));
+//   }
+// });
+
+// Verify Existing User OTP 2
 const login_verify_OTP = asyncHandler(async (req, res) => {
   try {
     const { phone, otp, verificationId } = req.body;
 
-    // Check if phone and OTP are provided
-    if (!phone || !otp) {
+    console.log(req.body);
+
+    // Check if phone, OTP, and verificationId are provided
+    if (!phone || !otp || !verificationId) {
       return res
         .status(400)
-        .json(new ApiResponse(400, null, "Phone number and OTP are required"));
+        .json(
+          new ApiResponse(
+            400,
+            null,
+            "Phone number, OTP, and verificationId are required"
+          )
+        );
     }
 
     // Validate phone number format
@@ -334,12 +470,29 @@ const login_verify_OTP = asyncHandler(async (req, res) => {
     const userRecord = await User.findOne({ phone });
     const astrologer = await Astrologer.findOne({ phone });
 
-    // Validate the OTP using the `validateOTP` function
-    const otpValidationResponse = await validateOTP(phone, verificationId, otp);
-    if (!otpValidationResponse.success) {
-      return res
-        .status(201)
-        .json(new ApiResponse(201, otpValidationResponse.data, "Invalid OTP"));
+    // Bypass OTP validation for specific numbers with exact verificationId and OTP
+    const bypassNumbers = ["7872358979", "7679039012", "9733524164"];
+    let otpValidationSuccess = true;
+
+    if (
+      !(
+        bypassNumbers.includes(phone) &&
+        verificationId === "1234567" &&
+        otp === 1234
+      )
+    ) {
+      const otpValidationResponse = await validateOTP(
+        phone,
+        verificationId,
+        otp
+      );
+
+      console.log("OTP Validation Response:", otpValidationResponse);
+      otpValidationSuccess = otpValidationResponse.success;
+    }
+
+    if (!otpValidationSuccess) {
+      return res.status(201).json(new ApiResponse(201, null, "Invalid OTP"));
     }
 
     // Generate access and refresh tokens
@@ -381,12 +534,10 @@ const login_verify_OTP = asyncHandler(async (req, res) => {
           superNote: userRecord ? userRecord.superNote : null,
           matrimonyID: matrimonyProfile ? matrimonyProfile.userId : null,
           datingID: datingProfile ? datingProfile.userId : null,
-          isMatrimonySubscribed: userRecord.matrimonySubscription
-            ? userRecord.matrimonySubscription.isSubscribed
-            : false,
-          isDatingSubscribed: userRecord?.datingSubscription
-            ? userRecord.datingSubscription.isSubscribed
-            : false,
+          isMatrimonySubscribed:
+            userRecord?.matrimonySubscription?.isSubscribed || false,
+          isDatingSubscribed:
+            userRecord?.datingSubscription?.isSubscribed || false,
           userDetails: userRecord
             ? {
                 Fname: userRecord.Fname,
@@ -1179,6 +1330,33 @@ const checkPromoCode = asyncHandler(async (req, res) => {
     .json(new ApiResponse(404, null, "Promo code not found"));
 });
 
+const deleteUserAccount = async (req, res) => {
+  try {
+    const { userId } = req.params;
+
+    // Find user
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    // Delete associated records
+    await Auth.findOneAndDelete({ _id: user.authId });
+    await Matrimony.findOneAndDelete({ userId });
+    await Dating.findOneAndDelete({ userId });
+    await Astrologer.findOneAndDelete({ userId });
+
+    // Delete user
+    await User.findByIdAndDelete(userId);
+
+    res.status(200).json({ message: "User account deleted successfully" });
+  } catch (error) {
+    res
+      .status(500)
+      .json({ message: "Error deleting user account", error: error.message });
+  }
+};
+
 export {
   loginUser,
   login_verify_OTP,
@@ -1197,4 +1375,5 @@ export {
   buyMatrimonySubscription,
   buyDatingSubscription,
   checkPromoCode,
+  deleteUserAccount,
 };
