@@ -3,6 +3,7 @@ import {
   createMatrimonyProfile,
   deleteMatrimonyProfileByUserId,
   getAllMatrimonyProfile,
+  getAllProfile,
   getMatrimonyProfileByUserId,
   getPendingLikesProfilesMatrimony,
   getRandomBrides,
@@ -15,6 +16,7 @@ import {
 const router = Router();
 
 router.route("/createMatrimonyProfile/:id").post(createMatrimonyProfile);
+router.route("/").get(getAllProfile);
 router.route("/getAll/:id").get(getAllMatrimonyProfile);
 router.route("/brides/:userId").get(getRandomBrides);
 router.route("/grooms/:userId").get(getRandomGrooms);

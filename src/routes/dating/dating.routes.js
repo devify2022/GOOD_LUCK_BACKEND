@@ -10,12 +10,14 @@ import {
   updateDatingProfileByUserId,
   getRandomMaleProfiles,
   getRandomFemaleProfiles,
+  getAllProfiles,
   // getMatchesProfilesDating,
 } from "../../controllers/dating/dating.controller.js";
 
 const router = Router();
 
 router.route("/createDatingProfile/:id").post(createDatingProfile);
+router.route("/").get(getAllProfiles);
 router.route("/getAll/:id").get(getAllDatingProfiles);
 router.route("/male/:userId").get(getRandomMaleProfiles);
 router.route("/female/:userId").get(getRandomFemaleProfiles);

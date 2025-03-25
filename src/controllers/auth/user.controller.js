@@ -1082,6 +1082,14 @@ const buyMatrimonySubscription = asyncHandler(async (req, res) => {
     throw new ApiError(400, "Invalid plan type.");
   }
 
+  // Check if the user has enough balance
+  if (user.wallet.balance < price) {
+    throw new ApiError(400, "Insufficient balance in wallet.");
+  }
+
+  // Deduct the amount from the wallet balance
+  user.wallet.balance -= price;
+
   user.wallet.transactionHistory.push({
     type: "debit",
     debit_type: "matrimony",
@@ -1156,6 +1164,14 @@ const buyDatingSubscription = asyncHandler(async (req, res) => {
   if (price === null) {
     throw new ApiError(400, "Invalid plan type.");
   }
+
+  // Check if the user has enough balance
+  if (user.wallet.balance < price) {
+    throw new ApiError(400, "Insufficient balance in wallet.");
+  }
+
+  // Deduct the amount from the wallet balance
+  user.wallet.balance -= price;
 
   user.wallet.transactionHistory.push({
     type: "debit",
@@ -1357,6 +1373,23 @@ const deleteUserAccount = async (req, res) => {
   }
 };
 
+// Get all users excluding isAstrologer and isAdmin
+const getAllUsers = asyncHandler(async (req, res) => {
+  try {
+    const users = await User.find({ isAstrologer: false, isAdmin: false });
+
+    if (!users || users.length === 0) {
+      return res.status(404).json(new ApiResponse(404, null, "No users found"));
+    }
+
+    res
+      .status(200)
+      .json(new ApiResponse(200, users, "Users retrieved successfully"));
+  } catch (error) {
+    throw new ApiError(500, error.message);
+  }
+});
+
 export {
   loginUser,
   login_verify_OTP,
@@ -1376,4 +1409,5 @@ export {
   buyDatingSubscription,
   checkPromoCode,
   deleteUserAccount,
+  getAllUsers,
 };

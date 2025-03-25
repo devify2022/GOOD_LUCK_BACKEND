@@ -9,6 +9,7 @@ import {
   buyMatrimonySubscription,
   checkPromoCode,
   deleteUserAccount,
+  getAllUsers,
   getAstrologersAndReviewsByUserId,
   getTransactionHistoryByUserId,
   getUserProfileDetailsById,
@@ -38,6 +39,7 @@ router.patch('/update-profile/:userId', updateUserById);
 router.get('/get-astrologers-reviews/:userId', getAstrologersAndReviewsByUserId);
 router.post('/check-promo-code', checkPromoCode);
 router.delete('/delete-profile/:userId', deleteUserAccount);
+router.get('/getAllUsers', getAllUsers);
 
 // secure routes
 // router.route("/logout").post(verifyJWT, logoutUser);

@@ -120,6 +120,33 @@ export const createDatingProfile = asyncHandler(async (req, res) => {
 });
 
 // Get All Dating Profiles
+export const getAllProfiles = asyncHandler(async (req, res) => {
+  try {
+    // Fetch all dating profiles
+    const allProfiles = await Dating.find();
+
+    // Check if profiles exist
+    if (!allProfiles || allProfiles.length === 0) {
+      return res
+        .status(404)
+        .json(new ApiResponse(404, null, "No dating profiles found"));
+    }
+
+    res
+      .status(200)
+      .json(
+        new ApiResponse(
+          200,
+          allProfiles,
+          "Dating profiles retrieved successfully"
+        )
+      );
+  } catch (error) {
+    throw new ApiError(500, error.message);
+  }
+});
+
+// Get All Dating Profiles
 export const getAllDatingProfiles = asyncHandler(async (req, res) => {
   try {
     const { id } = req.params; // Current user's ID
