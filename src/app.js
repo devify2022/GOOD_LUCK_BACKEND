@@ -13,12 +13,7 @@ const server = http.createServer(app);
 setupSocketIO(server); // Use the same server for Socket.IO
 
 app.use(
-  cors({
-    origin: ["http://localhost:3000", "http://192.168.0.100:8081", "*"],
-    methods: ["GET", "POST", "PATCH", "DELETE"],
-    allowedHeaders: ["Content-Type"],
-    credentials: true,
-  })
+  cors()
 );
 
 app.use(express.json({ limit: "16kb" }));
@@ -53,6 +48,7 @@ import panchangRouter from "./routes/panchang/panchang.routes.js";
 import rasifalRouter from "./routes/rasifal/rasifal.routes.js";
 import calenderRouter from "./routes/calender/calender.routes.js";
 import liveTvRouter from "./routes/liveTv/liveTv.routes.js";
+import localCategoryRouter from "./routes/local services/localserviceCategory.routes.js";
 import paymentRouter from "./routes/payment/payment.routes.js";
 import razorpayRouter from "./routes/payment/razorpay.routes.js";
 
@@ -84,6 +80,7 @@ app.use("/good_luck/api/v1/panchang", panchangRouter);
 app.use("/good_luck/api/v1/rasifal", rasifalRouter);
 app.use("/good_luck/api/v1/calender", calenderRouter);
 app.use("/good_luck/api/v1/liveTv", liveTvRouter);
+app.use("/good_luck/api/v1/localCategory", localCategoryRouter);
 app.use("/", paymentRouter);
 app.use("/", razorpayRouter);
 
