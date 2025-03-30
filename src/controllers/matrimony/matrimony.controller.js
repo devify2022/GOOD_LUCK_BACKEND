@@ -156,14 +156,22 @@ export const getAllMatrimonyProfile = asyncHandler(async (req, res) => {
         .json(new ApiResponse(404, [], "User profile not found"));
     }
 
+    // Ensure likedProfiles and pending_likes_id are arrays
+    const likedProfiles = Array.isArray(ownMatrimonyProfile.likedProfiles)
+      ? ownMatrimonyProfile.likedProfiles
+      : [];
+    const pendingLikes = Array.isArray(ownMatrimonyProfile.pending_likes_id)
+      ? ownMatrimonyProfile.pending_likes_id
+      : [];
+
     // Use aggregation pipeline for filtering
     const filteredMatrimonyProfiles = await Matrimony.aggregate([
       {
         $match: {
           userId: { $ne: ownMatrimonyProfile.userId }, // Exclude own profile
           searching_for: { $ne: ownMatrimonyProfile.searching_for }, // Ensure profile is looking for the opposite match
-          userId: { $nin: ownMatrimonyProfile.likedProfiles }, // Exclude liked profiles
-          pending_likes_id: { $nin: [ownMatrimonyProfile.userId] }, // Exclude profiles where user is in their pending likes
+          userId: { $nin: likedProfiles }, // Exclude liked profiles
+          userId: { $nin: pendingLikes }, // Exclude profiles where user is in their pending likes
         },
       },
     ]);
@@ -178,6 +186,7 @@ export const getAllMatrimonyProfile = asyncHandler(async (req, res) => {
         )
       );
   } catch (error) {
+    console.log(error.message);
     return res
       .status(500)
       .json(

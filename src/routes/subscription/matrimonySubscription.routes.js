@@ -5,7 +5,7 @@ const router = Router();
 
 router.route("/create").post(createMatrimonySubscription);
 router.route("/get").get(getMatrimonySubscription);
-router.route("/update").patch(updateMatrimonySubscription);
+router.route("/update/:subscriptionId").patch(updateMatrimonySubscription);
 router.route("/delete/:subscriptionId").delete(deleteMatrimonySubscription);
 
 export default router;

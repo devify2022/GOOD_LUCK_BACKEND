@@ -5,7 +5,7 @@ const router = Router();
 
 router.route("/create").post(createAdSubscription);
 router.route("/get").get(getAdSubscription);
-router.route("/update").patch(updateAdSubscriptions);
+router.route("/update/:subscriptionId").patch(updateAdSubscriptions);
 router.route("/delete/:subscriptionId").delete(deleteAdSubscription);
 
 export default router;
