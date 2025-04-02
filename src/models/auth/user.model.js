@@ -115,7 +115,7 @@ const usersSchema = new Schema(
       },
       price: {
         type: Number,
-      }
+      },
     },
     datingSubscription: {
       plan: {
@@ -138,7 +138,30 @@ const usersSchema = new Schema(
       },
       price: {
         type: Number,
-      }
+      },
+    },
+    localSubscription: {
+      plan: {
+        type: Schema.Types.ObjectId,
+        ref: "LocalSubscription",
+      },
+      isSubscribed: {
+        type: Boolean,
+        default: false,
+      },
+      category: {
+        type: String,
+        default: "1 month",
+      },
+      startDate: {
+        type: Date,
+      },
+      endDate: {
+        type: Date,
+      },
+      price: {
+        type: Number,
+      },
     },
     isVerified: {
       type: Boolean,

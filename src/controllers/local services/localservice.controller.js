@@ -1,15 +1,17 @@
+import { User } from "../../models/auth/user.model.js";
 import { LocalService } from "../../models/local services/localservice.model.js";
+import { LocalServiceCategory } from "../../models/local services/localserviceCategory.model.js";
 import { ApiResponse } from "../../utils/apiResponse.js";
 import { asyncHandler } from "../../utils/asyncHandler.js";
 
-// Create a Local Service
+// Create a Local Service with Subscription Check
 export const createLocalService = asyncHandler(async (req, res, next) => {
   try {
-    const { userId, authId, category, image, contact, isAvailable } = req.body;
+    const { userId, category, image, contact, isAvailable } = req.body;
 
+    // Validate required fields
     const missingFields = [];
     if (!userId) missingFields.push("userId");
-    if (!authId) missingFields.push("authId");
     if (!category) missingFields.push("category");
     if (!image) missingFields.push("image");
     if (!contact) missingFields.push("contact");
@@ -26,15 +28,40 @@ export const createLocalService = asyncHandler(async (req, res, next) => {
         );
     }
 
+    // Find the user
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json(new ApiResponse(404, null, "User not found"));
+    }
+
+    // Find the user
+    const serviceCategory = await LocalServiceCategory.findById(category);
+    if (!serviceCategory) {
+      return res.status(404).json(new ApiResponse(404, null, "Category not found"));
+    }
+
+    // Check subscription
+    if (!user.localSubscription || !user.localSubscription.isSubscribed) {
+      return res
+        .status(403)
+        .json(
+          new ApiResponse(
+            403,
+            null,
+            "User does not have an active local service subscription"
+          )
+        );
+    }
+
+    // Create and save new service
     const newService = new LocalService({
       userId,
-      authId,
+      authId: user.authId,
       category,
       image,
       contact,
       isAvailable: isAvailable !== undefined ? isAvailable : true,
     });
-
     await newService.save();
 
     return res
@@ -54,8 +81,8 @@ export const getAllLocalServices = asyncHandler(async (req, res, next) => {
 
     if (!services.length) {
       return res
-        .status(404)
-        .json(new ApiResponse(404, null, "No local services found"));
+        .status(200)
+        .json(new ApiResponse(200, [], "No local services found"));
     }
 
     res

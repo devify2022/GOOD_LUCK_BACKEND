@@ -19,6 +19,7 @@ import { validateOTP } from "../../utils/validateOtp.js";
 import { validatePhoneNumber } from "../../utils/validatePhoneNumber.js";
 import { MatrimonySubscription } from "../../models/subscription/matrimony.subscription.js";
 import { DatingSubscription } from "../../models/subscription/dating.subscription.js";
+import { LocalSubscription } from "../../models/subscription/localserviceSubscription.js";
 
 // Helper to generate access and refresh tokens
 const generateAccessAndRefreshToken = async (authId) => {
@@ -1122,6 +1123,21 @@ const buyMatrimonySubscription = asyncHandler(async (req, res) => {
 
   await user.save();
 
+  // Credit commission to the admin's wallet
+  const admin = await Admin.findOne(); // Assuming a single admin
+  if (admin) {
+    admin.wallet.balance += price;
+    admin.wallet.transactionHistory.push({
+      type: "credit",
+      credit_type: "matrimony",
+      amount: price,
+      description: "Commission from matrimony subscription for admin",
+      reference: "NA",
+      transactionId: transactionId,
+    });
+    await admin.save();
+  }
+
   res
     .status(200)
     .json(
@@ -1205,7 +1221,20 @@ const buyDatingSubscription = asyncHandler(async (req, res) => {
 
   await user.save();
 
-  console.log(user.datingSubscription);
+  // Credit commission to the admin's wallet
+  const admin = await Admin.findOne(); // Assuming a single admin
+  if (admin) {
+    admin.wallet.balance += price;
+    admin.wallet.transactionHistory.push({
+      type: "credit",
+      credit_type: "dating",
+      amount: price,
+      description: "Commission from dating subscription for admin",
+      reference: "NA",
+      transactionId: transactionId,
+    });
+    await admin.save();
+  }
 
   res.status(200).json(
     new ApiResponse(
@@ -1214,6 +1243,104 @@ const buyDatingSubscription = asyncHandler(async (req, res) => {
       "Dating subscription purchased successfully."
     )
   );
+});
+
+// Buy Local Subscription
+export const buyLocalSubscription = asyncHandler(async (req, res) => {
+  const { userId, planType, transactionId } = req.body;
+
+  if (!userId || !planType) {
+    throw new ApiError(400, "User ID and plan type are required.");
+  }
+
+  // Fetch the user
+  const user = await User.findById(userId);
+  if (!user) {
+    throw new ApiError(404, "User not found.");
+  }
+
+  // Fetch subscription plans
+  const subscriptionPlans = await LocalSubscription.findOne();
+  if (!subscriptionPlans) {
+    throw new ApiError(404, "Subscription plans not found.");
+  }
+
+  // Determine the price based on the planType
+  const price =
+    planType === "one_month_plan"
+      ? subscriptionPlans.one_month_plan
+      : planType === "one_year_plan"
+        ? subscriptionPlans.one_year_plan
+        : null;
+
+  if (price === null) {
+    throw new ApiError(400, "Invalid plan type.");
+  }
+
+  // Check if the user has enough balance
+  if (user.wallet.balance < price) {
+    throw new ApiError(400, "Insufficient balance in wallet.");
+  }
+
+  // Deduct the amount from the wallet balance
+  user.wallet.balance -= price;
+
+  user.wallet.transactionHistory.push({
+    type: "debit",
+    debit_type: "Local Service",
+    amount: price,
+    description: "Local subscription purchase",
+    reference: planType,
+    transactionId: transactionId,
+  });
+
+  // Set the local subscription details
+  user.localSubscription = {
+    plan: subscriptionPlans._id,
+    isSubscribed: true,
+    category: planType === "one_month_plan" ? "1 month" : "1 year",
+    startDate: new Date(),
+    endDate: new Date(),
+    price: price,
+  };
+
+  // Calculate the end date
+  if (planType === "one_month_plan") {
+    user.localSubscription.endDate.setMonth(
+      user.localSubscription.startDate.getMonth() + 1
+    );
+  } else if (planType === "one_year_plan") {
+    user.localSubscription.endDate.setFullYear(
+      user.localSubscription.startDate.getFullYear() + 1
+    );
+  }
+
+  await user.save();
+
+  // Credit commission to the admin's wallet
+  const admin = await Admin.findOne(); // Assuming a single admin
+  if (admin) {
+    admin.wallet.balance += price;
+    admin.wallet.transactionHistory.push({
+      type: "credit",
+      credit_type: "Local Service",
+      amount: price,
+      description: "Commission from Local Service subscription for admin",
+      reference: "NA",
+      transactionId: transactionId,
+    });
+    await admin.save();
+  }
+
+  res
+    .status(200)
+    .json(
+      new ApiResponse(
+        200,
+        { subscription: user.localSubscription },
+        "Local subscription purchased successfully."
+      )
+    );
 });
 
 // Get astrologers and reviews by user ID

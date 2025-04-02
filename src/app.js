@@ -50,6 +50,7 @@ import rasifalRouter from "./routes/rasifal/rasifal.routes.js";
 import calenderRouter from "./routes/calender/calender.routes.js";
 import liveTvRouter from "./routes/liveTv/liveTv.routes.js";
 import localCategoryRouter from "./routes/local services/localserviceCategory.routes.js";
+import localServiceRouter from "./routes/local services/localservice.routes.js";
 import paymentRouter from "./routes/payment/payment.routes.js";
 import razorpayRouter from "./routes/payment/razorpay.routes.js";
 
@@ -83,6 +84,7 @@ app.use("/good_luck/api/v1/rasifal", rasifalRouter);
 app.use("/good_luck/api/v1/calender", calenderRouter);
 app.use("/good_luck/api/v1/liveTv", liveTvRouter);
 app.use("/good_luck/api/v1/localCategory", localCategoryRouter);
+app.use("/good_luck/api/v1/localService", localServiceRouter);
 app.use("/", paymentRouter);
 app.use("/", razorpayRouter);
 
