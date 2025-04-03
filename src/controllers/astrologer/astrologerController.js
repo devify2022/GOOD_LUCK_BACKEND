@@ -366,23 +366,31 @@ export const updateRequestAstrologerProfile = asyncHandler(async (req, res) => {
 
 // Get all update request astrologers
 export const getAllUpdateRequestAstrologers = asyncHandler(async (req, res) => {
-  const updateRequests = await UpdateAstrologerProfile.find();
+  try {
+    console.log("hello");
+    const updateRequests = await UpdateAstrologerProfile.find();
 
-  if (updateRequests.length === 0) {
+    if (updateRequests.length === 0) {
+      return res
+        .status(200)
+        .json(new ApiResponse(200, [], "No update request astrologers found"));
+    }
+
     return res
       .status(200)
-      .json(new ApiResponse(200, [], "No update request astrologers found"));
+      .json(
+        new ApiResponse(
+          200,
+          updateRequests,
+          "All update request astrologers retrieved successfully"
+        )
+      );
+  } catch (error) {
+    console.log(error.message);
+    return res
+      .status(500)
+      .json(new ApiResponse(500, null, "Internal Server Error", error.message));
   }
-
-  return res
-    .status(200)
-    .json(
-      new ApiResponse(
-        200,
-        updateRequests,
-        "All update request astrologers retrieved successfully"
-      )
-    );
 });
 
 // Get update request astrologer by ID
@@ -448,13 +456,7 @@ export const approveUpdateRequest = asyncHandler(async (req, res) => {
 
   return res
     .status(200)
-    .json(
-      new ApiResponse(
-        200,
-        astrologer,
-        "Astrologer profile updated successfully"
-      )
-    );
+    .json(new ApiResponse(200, [], "Astrologer profile updated successfully"));
 });
 
 // Approve Astrologer Request

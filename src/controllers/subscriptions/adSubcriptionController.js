@@ -66,7 +66,8 @@ export const getAdSubscription = asyncHandler(async (req, res) => {
 
 // Function to update Ad subscription prices
 export const updateAdSubscriptions = asyncHandler(async (req, res) => {
-  const { subscriptionId, one_month_plan, one_year_plan } = req.body;
+  const { subscriptionId } = req.params;
+  const { one_month_plan, one_year_plan } = req.body;
 
   // Validate input
   if (!subscriptionId) {

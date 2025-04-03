@@ -573,6 +573,14 @@ const login_verify_OTP = asyncHandler(async (req, res) => {
                 category: userRecord.datingSubscription.category,
               }
             : null,
+            localSubscription: userRecord?.localSubscription
+            ? {
+                isSubscribed: userRecord.localSubscription.isSubscribed,
+                StartDate: userRecord.localSubscription.startDate,
+                EndDate: userRecord.localSubscription.endDate,
+                category: userRecord.localSubscription.category,
+              }
+            : null,
         },
         "OTP Verified"
       )

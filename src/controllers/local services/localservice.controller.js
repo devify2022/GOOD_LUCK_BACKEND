@@ -1,3 +1,4 @@
+import mongoose from "mongoose";
 import { User } from "../../models/auth/user.model.js";
 import { LocalService } from "../../models/local services/localservice.model.js";
 import { LocalServiceCategory } from "../../models/local services/localserviceCategory.model.js";
@@ -37,7 +38,9 @@ export const createLocalService = asyncHandler(async (req, res, next) => {
     // Find the user
     const serviceCategory = await LocalServiceCategory.findById(category);
     if (!serviceCategory) {
-      return res.status(404).json(new ApiResponse(404, null, "Category not found"));
+      return res
+        .status(404)
+        .json(new ApiResponse(404, null, "Category not found"));
     }
 
     // Check subscription
@@ -154,6 +157,46 @@ export const updateLocalService = asyncHandler(async (req, res, next) => {
     next(error);
   }
 });
+
+// Get Local Services by Category ID
+export const getLocalServicesByCategory = asyncHandler(
+  async (req, res, next) => {
+    try {
+      const { categoryId } = req.params;
+
+      // Validate ObjectId
+      if (!mongoose.Types.ObjectId.isValid(categoryId)) {
+        return res
+          .status(400)
+          .json(new ApiResponse(400, null, "Invalid category ID"));
+      }
+
+      const services = await LocalService.find({
+        category: categoryId,
+      }).populate("category", "name");
+
+      if (!services.length) {
+        return res
+          .status(200)
+          .json(
+            new ApiResponse(
+              200,
+              [],
+              "No local services found for this category"
+            )
+          );
+      }
+
+      res
+        .status(200)
+        .json(
+          new ApiResponse(200, services, "Local services fetched successfully")
+        );
+    } catch (error) {
+      next(error);
+    }
+  }
+);
 
 // Delete Local Service by ID
 export const deleteLocalService = asyncHandler(async (req, res, next) => {
