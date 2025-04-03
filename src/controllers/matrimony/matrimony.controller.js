@@ -62,7 +62,7 @@ export const createMatrimonyProfile = asyncHandler(async (req, res) => {
         photo,
         city,
         state,
-        salary,
+        salary: salary ? salary : 0,
         age,
         gender,
         bio,
@@ -70,7 +70,7 @@ export const createMatrimonyProfile = asyncHandler(async (req, res) => {
         cast,
         interests,
         searching_for,
-        facebookLink,
+        facebookLink: facebookLink || null,
         whatsappNumber: whatsappNumber || existsUser.phone,
         isVerified: true,
       });

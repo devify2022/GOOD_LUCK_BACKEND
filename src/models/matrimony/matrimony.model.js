@@ -34,7 +34,7 @@ const matrimonySchema = new Schema(
     },
     salary: {
       type: String,
-      required: [true, "Salary is required"],
+      // required: [true, "Salary is required"],
     },
     age: {
       type: Number,
