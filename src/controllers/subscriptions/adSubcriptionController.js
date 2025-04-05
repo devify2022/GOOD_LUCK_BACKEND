@@ -52,16 +52,15 @@ export const getAdSubscription = asyncHandler(async (req, res) => {
       .json(new ApiResponse(200, null, "Subscription not found"));
   }
 
-  return res.status(200).json(
-    new ApiResponse(
-      200,
-      {
-        one_month_plan: subscription.one_month_plan,
-        one_year_plan: subscription.one_year_plan,
-      },
-      "Subscription prices fetched successfully"
-    )
-  );
+  return res
+    .status(200)
+    .json(
+      new ApiResponse(
+        200,
+        subscription,
+        "Subscription prices fetched successfully"
+      )
+    );
 });
 
 // Function to update Ad subscription prices

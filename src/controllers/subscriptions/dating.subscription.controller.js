@@ -55,10 +55,7 @@ export const getDatingSubscription = asyncHandler(async (req, res) => {
   return res.status(200).json(
     new ApiResponse(
       200,
-      {
-        one_month_plan: subscription.one_month_plan,
-        one_year_plan: subscription.one_year_plan,
-      },
+      subscription,
       "Subscription prices fetched successfully"
     )
   );
