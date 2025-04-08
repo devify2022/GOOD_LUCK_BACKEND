@@ -92,6 +92,8 @@ app.get("/", (req, res) => {
   res.send("Welcome to Good Luck API !");
 });
 
+// Hello World
+
 // Error handling middleware
 app.use(errorHandler);
 
