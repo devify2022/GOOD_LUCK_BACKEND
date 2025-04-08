@@ -89,7 +89,7 @@ app.use("/", paymentRouter);
 app.use("/", razorpayRouter);
 
 app.get("/", (req, res) => {
-  res.send("Welcome to Good Luck API !");
+  res.send("Welcome to Good Luck API v2.0 !");
 });
 
 // Hello World
