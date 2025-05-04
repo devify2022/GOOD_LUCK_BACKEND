@@ -371,8 +371,8 @@ export async function handleCallRequest(io, data, socket) {
     await callRequest.save();
 
     // Agora credentials
-    const appID = "69779ffdb88442ecb348ae75b0b3963d";
-    const appCertificate = "e10b414d78c84ec9bcd1160d6fe0ef4c";
+    const appID = "ef40e7bf43a541bfa99779b82eca7957";
+    const appCertificate = "64db0dc604314dc59ef4f2316790adec";
 
     // Generate unique UIDs for both client and astrologer
     const userUid = Math.floor(Math.random() * 100000); // Unique UID for the client
