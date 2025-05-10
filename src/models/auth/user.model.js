@@ -183,6 +183,11 @@ const usersSchema = new Schema(
       type: Boolean,
       default: false,
     },
+    oneSignalPlayerId: {
+      type: String,
+      default: null,
+    },
+
     superNote: {
       type: Number,
       default: 2000,

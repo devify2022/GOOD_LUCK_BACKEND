@@ -98,6 +98,10 @@ const astrologerSchema = new Schema(
     promo_code: {
       type: Number,
     },
+    oneSignalPlayerId: {
+      type: String,
+      default: null,
+    },
   },
   { timestamps: true }
 );

@@ -20,6 +20,7 @@ import { validatePhoneNumber } from "../../utils/validatePhoneNumber.js";
 import { MatrimonySubscription } from "../../models/subscription/matrimony.subscription.js";
 import { DatingSubscription } from "../../models/subscription/dating.subscription.js";
 import { LocalSubscription } from "../../models/subscription/localserviceSubscription.js";
+import sendNotification from "../../utils/onesignal.js";
 
 // Helper to generate access and refresh tokens
 const generateAccessAndRefreshToken = async (authId) => {
@@ -127,7 +128,7 @@ const authRequest = asyncHandler(async (req, res) => {
 
 // Verify New User OTP
 const auth_request_verify_OTP = asyncHandler(async (req, res) => {
-  const { phone, otp, verificationId } = req.body;
+  const { phone, otp, verificationId, oneSignalPlayerId } = req.body;
 
   if (!phone || !otp) {
     return res
@@ -183,6 +184,7 @@ const auth_request_verify_OTP = asyncHandler(async (req, res) => {
         },
       ],
     },
+    oneSignalPlayerId: oneSignalPlayerId || null,
   });
   await newUser.save();
 
@@ -200,6 +202,19 @@ const auth_request_verify_OTP = asyncHandler(async (req, res) => {
   );
 
   await authRequestRecord.deleteOne();
+
+  // Send a "Welcome to the App" notification
+  if (oneSignalPlayerId) {
+    try {
+      await sendNotification(
+        phone,
+        "Welcome to Good Luck",
+        "Your account has been successfully created. Enjoy our services!"
+      );
+    } catch (error) {
+      console.error("Error sending welcome notification:", error.message);
+    }
+  }
 
   return res.status(200).json(
     new ApiResponse(
@@ -513,6 +528,19 @@ const login_verify_OTP = asyncHandler(async (req, res) => {
     });
     const datingProfile = await Dating.findOne({ authId: authRecord._id });
 
+    // Send a "Login Successful" notification
+    if (userRecord?.oneSignalPlayerId) {
+      try {
+        await sendNotification(
+          phone,
+          "Login Successful",
+          "You have successfully logged into your account."
+        );
+      } catch (error) {
+        console.error("Error sending login notification:", error.message);
+      }
+    }
+
     // Send response with user data
     return res.status(200).json(
       new ApiResponse(
@@ -573,7 +601,7 @@ const login_verify_OTP = asyncHandler(async (req, res) => {
                 category: userRecord.datingSubscription.category,
               }
             : null,
-            localSubscription: userRecord?.localSubscription
+          localSubscription: userRecord?.localSubscription
             ? {
                 isSubscribed: userRecord.localSubscription.isSubscribed,
                 StartDate: userRecord.localSubscription.startDate,
